@@ -211,13 +211,13 @@ function MainApp() {
   useEffect(() => {
     api.get<ApiProgram[]>('/api/programs').then(setPrograms).catch(console.error);
     api.get<{ activeProgramId: string | null }>('/api/auth/me').then(d => {
-      if (d.activeProgramId) setActiveProgramId(d.activeProgramId as any);
+      if (d.activeProgramId) setActiveProgramId(Number(d.activeProgramId));
     }).catch(console.error);
     api.get<HistoryEntry[]>('/api/me/history').then(setApiHistory).catch(console.error);
     api.get<Record<string, { week: number; session: number }>>('/api/me/progress').then(progressMap => {
-      const map: Record<string, { current_week: number; current_session: number }> = {};
+      const map: Record<number, { current_week: number; current_session: number }> = {};
       Object.entries(progressMap).forEach(([id, p]) => {
-        map[id] = { current_week: p.week, current_session: p.session };
+        map[Number(id)] = { current_week: p.week, current_session: p.session };
       });
       setApiProgress(map);
     }).catch(console.error);
