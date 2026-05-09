@@ -6,7 +6,7 @@ FROM node:22-alpine AS frontend-build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --ignore-scripts
+RUN npm install --ignore-scripts
 
 COPY . .
 RUN npm run build
@@ -19,7 +19,7 @@ FROM node:22-alpine AS server-build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --ignore-scripts
+RUN npm install --ignore-scripts
 
 COPY server ./server
 COPY schema.sql ./schema.sql
@@ -35,7 +35,7 @@ WORKDIR /app
 
 # Only install production dependencies
 COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm install --omit=dev --ignore-scripts
 
 # Copy built frontend (Vite output)
 COPY --from=frontend-build /app/dist ./dist
