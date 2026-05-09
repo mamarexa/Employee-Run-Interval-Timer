@@ -504,13 +504,91 @@ function MainApp() {
 }
 
 // --- Root App with Routes ---
+// --- Install Guide (shown when opened in browser, not as installed PWA) ---
+function InstallGuide() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] p-6 text-center">
+      <div className="max-w-sm w-full space-y-6">
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-3 mb-2">
+          <img src="/icons/icon-192.svg" alt="Run" className="w-20 h-20 rounded-[22px] shadow-2xl" />
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">MonCivique Run</h1>
+          <p className="text-white/60 text-sm">Your personal running coach</p>
+        </div>
+
+        {/* Why */}
+        <GlassCard className="p-5 text-left space-y-3">
+          <p className="text-white font-semibold text-sm">This app works best installed on your phone — it needs to run as a home screen app to:</p>
+          <ul className="space-y-2 text-white/80 text-sm">
+            <li className="flex items-center gap-2"><span className="text-lg">🔔</span> Play audio cues when to run and walk</li>
+            <li className="flex items-center gap-2"><span className="text-lg">📳</span> Vibrate at each interval change</li>
+            <li className="flex items-center gap-2"><span className="text-lg">🔒</span> Keep running in the background</li>
+          </ul>
+        </GlassCard>
+
+        {/* Steps */}
+        <GlassCard className="p-5 text-left space-y-4">
+          <p className="text-white font-bold text-sm uppercase tracking-wider">How to install</p>
+          {isIOS ? (
+            <ol className="space-y-3 text-white/80 text-sm">
+              <li className="flex gap-3">
+                <span className="text-white font-bold w-5 shrink-0">1.</span>
+                <span>Tap the <strong className="text-white">Share</strong> button <span className="inline-block bg-white/20 px-1.5 py-0.5 rounded text-xs">⎙</span> at the bottom of Safari</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-white font-bold w-5 shrink-0">2.</span>
+                <span>Scroll down and tap <strong className="text-white">Add to Home Screen</strong></span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-white font-bold w-5 shrink-0">3.</span>
+                <span>Tap <strong className="text-white">Add</strong> in the top right</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-white font-bold w-5 shrink-0">4.</span>
+                <span>Open the app from your home screen and paste your invite link</span>
+              </li>
+            </ol>
+          ) : (
+            <ol className="space-y-3 text-white/80 text-sm">
+              <li className="flex gap-3">
+                <span className="text-white font-bold w-5 shrink-0">1.</span>
+                <span>Tap the <strong className="text-white">⋮</strong> menu in Chrome (top right)</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-white font-bold w-5 shrink-0">2.</span>
+                <span>Tap <strong className="text-white">Add to Home screen</strong> or <strong className="text-white">Install app</strong></span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-white font-bold w-5 shrink-0">3.</span>
+                <span>Open the app from your home screen and paste your invite link</span>
+              </li>
+            </ol>
+          )}
+        </GlassCard>
+
+        <p className="text-white/40 text-xs">Already installed? Open the app from your home screen icon.</p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true);
+
   return (
     <Routes>
       <Route path="/auth/verify" element={<AuthVerify />} />
       <Route path="/admin" element={<AdminLogin />} />
       <Route path="/admin/dashboard" element={<Admin />} />
-      <Route path="/*" element={<AuthGate><MainApp /></AuthGate>} />
+      <Route path="/*" element={
+        isStandalone
+          ? <AuthGate><MainApp /></AuthGate>
+          : <InstallGuide />
+      } />
     </Routes>
   );
 }
