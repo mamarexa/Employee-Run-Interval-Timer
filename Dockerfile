@@ -25,6 +25,7 @@ COPY server ./server
 COPY schema.sql ./schema.sql
 COPY tsconfig.json ./tsconfig.json
 RUN npx tsc --project server/tsconfig.json
+RUN echo '{"type":"commonjs"}' > dist/server/package.json
 
 # ──────────────────────────────────────────────
 # Stage 3: Production image
