@@ -302,7 +302,7 @@ function MainApp() {
     const mins = Math.floor(totalSeconds / 60);
 
     return (
-      <div className="w-full max-w-sm px-6 pt-12 pb-32 space-y-6 flex flex-col mx-auto">
+      <div className="w-full max-w-sm px-6 safe-area-pt pb-32 space-y-6 flex flex-col mx-auto">
         <GlassCard className="p-8 text-center space-y-8 flex flex-col items-center">
           <div className="space-y-2 w-full">
             <h2 className="text-slate-500 dark:text-white/60 text-xs tracking-widest uppercase font-semibold">Up Next</h2>
@@ -338,7 +338,7 @@ function MainApp() {
     if (viewingProgram) {
       const weeks = Array.from(new Set(programSessions.map(s => s.week_number)));
       return (
-        <div className="w-full max-w-md px-6 pt-12 pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar flex flex-col">
+        <div className="w-full max-w-md px-6 safe-area-pt pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar flex flex-col">
           <button onClick={() => setViewingProgram(null)} className="flex items-center gap-2 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white font-semibold mb-2">
             <ChevronLeft className="w-5 h-5" /> Back
           </button>
@@ -377,7 +377,7 @@ function MainApp() {
       );
     }
     return (
-      <div className="w-full max-w-md px-6 pt-12 pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
+      <div className="w-full max-w-md px-6 safe-area-pt pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
         <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-8 tracking-tight">Programs</h1>
         <div className="flex flex-col gap-4">
           {programs.map(prog => {
@@ -450,7 +450,7 @@ function MainApp() {
   };
 
   const renderProfile = () => (
-    <div className="w-full max-w-md px-6 pt-12 pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
+    <div className="w-full max-w-md px-6 safe-area-pt pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
       <div className="flex items-center gap-4 mb-8">
         <label className="relative cursor-pointer group">
           <input type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />

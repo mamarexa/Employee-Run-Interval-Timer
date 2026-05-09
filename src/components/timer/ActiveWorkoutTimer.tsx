@@ -160,7 +160,7 @@ export function ActiveWorkoutTimer({ onComplete, onClose }: ActiveWorkoutTimerPr
   };
 
   return (
-    <div className="flex flex-col items-center justify-between h-full py-10 px-6 safe-area-pt w-full relative">
+    <div className="flex flex-col items-center justify-between h-full safe-area-pt safe-area-pb px-6 w-full relative">
 
       {/* Header */}
       <div className="flex flex-col items-center space-y-4 mt-8 w-full">

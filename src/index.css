@@ -44,8 +44,8 @@ body {
 
 /* Safe area padding for iOS */
 .safe-area-pt {
-  padding-top: env(safe-area-inset-top, 1rem);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 3rem);
 }
 .safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom, 1rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
 }
