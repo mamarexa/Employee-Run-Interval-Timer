@@ -248,7 +248,7 @@ function MainApp() {
     if (activeSessionInfo) {
       const { programId, week, sessionNum } = activeSessionInfo;
       try {
-        await api.post('/api/me/history', { program_id: programId, week_number: week, session_number: sessionNum, feedback });
+        await api.post('/api/me/history', { programId, weekNumber: week, sessionNumber: sessionNum, feedback });
         const sessions = await api.get<ApiSession[]>(`/api/programs/${programId}/sessions`);
         const curIdx = sessions.findIndex(s => s.week_number === week && s.session_number === sessionNum);
         const next = sessions[curIdx + 1];
