@@ -94,6 +94,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { pass, token } = useAuthStore();
   const [status, setStatus] = useState<'loading' | 'ok' | 'locked'>('loading');
+  const [linkInput, setLinkInput] = useState('');
+  const [linkError, setLinkError] = useState(false);
 
   useEffect(() => {
     const urlPass = searchParams.get('pass');
@@ -134,12 +136,48 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+  const handleLinkSubmit = async () => {
+    const raw = linkInput.trim();
+    let extractedPass = raw;
+    try {
+      const url = new URL(raw);
+      extractedPass = url.searchParams.get('pass') ?? raw;
+    } catch { /* raw is already just the token */ }
+    if (!extractedPass) return;
+    setStatus('loading');
+    const ok = await verifyPass(extractedPass);
+    if (ok) {
+      navigate('/', { replace: true });
+      setStatus('ok');
+    } else {
+      setLinkError(true);
+      setStatus('locked');
+    }
+  };
+
   if (status === 'locked') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[100dvh] p-8 text-center gap-6">
         <GlassCard className="p-8 max-w-sm w-full space-y-4">
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Access Required</h1>
-          <p className="text-slate-600 dark:text-white/70">Your session has expired. Please use your personal invite link or ask your admin to send a new one.</p>
+          <p className="text-slate-600 dark:text-white/70">Use your personal invite link, or paste it below.</p>
+          <div className="space-y-2 text-left">
+            <input
+              type="text"
+              value={linkInput}
+              onChange={e => { setLinkInput(e.target.value); setLinkError(false); }}
+              onKeyDown={e => e.key === 'Enter' && handleLinkSubmit()}
+              placeholder="Paste your invite link…"
+              className="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-white/20 bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+            {linkError && <p className="text-red-500 text-xs">Invalid link. Please try again.</p>}
+            <button
+              onClick={handleLinkSubmit}
+              className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-colors"
+            >
+              Continue
+            </button>
+          </div>
         </GlassCard>
       </div>
     );
