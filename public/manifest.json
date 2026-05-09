@@ -4,7 +4,7 @@
   "description": "Employee wellness running program by MonCivique",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#dbeafe",
+  "background_color": "#1A202C",
   "theme_color": "#0f172a",
   "orientation": "portrait",
   "icons": [

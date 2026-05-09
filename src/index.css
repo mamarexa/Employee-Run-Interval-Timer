@@ -33,21 +33,12 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #ede9fe 100%);
+  background: linear-gradient(135deg, #1A202C 0%, #2D3748 50%, #4A5568 100%);
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
-  color: #1a202c;
+  color: #F7FAFC;
   min-height: 100vh;
   background-attachment: fixed;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background: linear-gradient(135deg, #1A202C 0%, #2D3748 50%, #4A5568 100%);
-    background-size: 400% 400%;
-    animation: gradient 15s ease infinite;
-    color: #F7FAFC;
-  }
 }
 
 /* Safe area padding for iOS */
