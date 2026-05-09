@@ -8,7 +8,7 @@ import { api, verifyPass, silentRefresh } from './lib/api';
 import { GlassCard } from './components/ui/glass-card';
 import { BottomNav } from './components/ui/bottom-nav';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Settings, LogOut, ChevronLeft } from 'lucide-react';
+import { Play, LogOut, ChevronLeft } from 'lucide-react';
 import { SlideToStart } from './components/ui/slide-to-start';
 import { CHARACTERS } from './store/useUserStore';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -416,22 +416,62 @@ function MainApp() {
     );
   };
 
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get<{ avatar: string | null }>('/api/me').then(d => {
+      if (d.avatar) setAvatarUrl(d.avatar);
+    }).catch(() => {});
+  }, []);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Resize to 256×256 via canvas
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await new Promise(r => { img.onload = r; });
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d')!;
+    // Cover crop
+    const scale = Math.max(256 / img.width, 256 / img.height);
+    const sw = 256 / scale, sh = 256 / scale;
+    const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 256, 256);
+    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+    try {
+      await api.post('/api/me/avatar', { avatar: base64 });
+      setAvatarUrl(base64);
+      showToast('Profile picture updated!');
+    } catch {
+      showToast('Upload failed. Try a smaller image.');
+    }
+  };
+
   const renderProfile = () => (
     <div className="w-full max-w-md px-6 pt-12 pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
       <div className="flex items-center gap-4 mb-8">
-        <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(user?.name ?? 'User')}&backgroundColor=E0F7FA`} alt="avatar" className="w-16 h-16 rounded-full border-2 border-white shadow-md bg-white/50" />
+        <label className="relative cursor-pointer group">
+          <input type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
+          <img
+            src={avatarUrl ?? `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(user?.name ?? 'User')}&backgroundColor=1A202C`}
+            alt="avatar"
+            className="w-16 h-16 rounded-full border-2 border-white shadow-md bg-white/50 object-cover"
+          />
+          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+            <span className="text-white text-[10px] font-bold">EDIT</span>
+          </div>
+        </label>
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{user?.name ?? 'Runner'}</h1>
+          <p className="text-xs text-white/50 mt-0.5">Tap photo to change</p>
         </div>
       </div>
       <GlassCard className="p-2 mb-8">
         <button onClick={() => { logout(); showToast('Signed out.'); }} className="flex items-center gap-3 w-full p-4 text-left hover:bg-white/20 rounded-2xl transition-colors text-red-500">
           <LogOut className="w-5 h-5" />
           <span className="font-semibold flex-1">Sign Out</span>
-        </button>
-        <button onClick={() => showToast('Use the admin panel to manage user data.')} className="flex items-center gap-3 w-full p-4 text-left hover:bg-white/20 rounded-2xl transition-colors text-slate-700 dark:text-white">
-          <Settings className="w-5 h-5 text-slate-500" />
-          <span className="font-semibold flex-1">Preferences</span>
         </button>
       </GlassCard>
 

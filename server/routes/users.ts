@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
       active_program_id: string | null;
       selected_character_id: string;
     }>(
-      'SELECT id, name, active_program_id, selected_character_id FROM users WHERE id = $1',
+      'SELECT id, name, active_program_id, selected_character_id, avatar FROM users WHERE id = $1',
       [req.user!.userId]
     );
     if (u.rows.length === 0) { res.status(404).json({ error: 'User not found' }); return; }
@@ -44,6 +44,27 @@ router.patch('/', async (req, res) => {
   values.push(req.user!.userId);
   try {
     await query(`UPDATE users SET ${fields.join(', ')} WHERE id = $${values.length}`, values);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/me/avatar — upload base64 avatar (max ~200KB after resize)
+router.post('/avatar', async (req, res) => {
+  const { avatar } = req.body ?? {};
+  if (typeof avatar !== 'string' || !avatar.startsWith('data:image/')) {
+    res.status(400).json({ error: 'Invalid avatar data' });
+    return;
+  }
+  // Enforce max size (~200KB base64 ≈ 150KB image)
+  if (avatar.length > 210_000) {
+    res.status(413).json({ error: 'Image too large. Please upload a smaller image.' });
+    return;
+  }
+  try {
+    await query('UPDATE users SET avatar = $1 WHERE id = $2', [avatar, req.user!.userId]);
     res.json({ ok: true });
   } catch (err) {
     console.error(err);

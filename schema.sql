@@ -58,5 +58,8 @@ CREATE TABLE IF NOT EXISTS history (
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_sessions_program ON sessions(program_id);
 CREATE INDEX IF NOT EXISTS idx_progress_user ON progress(user_id);
+
+-- Migrations (safe to run on existing databases)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
 CREATE INDEX IF NOT EXISTS idx_history_user ON history(user_id);
 CREATE INDEX IF NOT EXISTS idx_history_completed ON history(completed_at);
