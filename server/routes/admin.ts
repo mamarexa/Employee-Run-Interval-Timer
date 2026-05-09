@@ -114,8 +114,8 @@ router.get('/programs', async (_req, res) => {
     const enrollMap = Object.fromEntries(enrolled.rows.map((r: { active_program_id: string; cnt: string }) => [r.active_program_id, Number(r.cnt)]));
     const result = (programs.rows as Array<Record<string, unknown>>).map(p => ({
       ...p,
-      sessionCount: countMap[p.id] ?? 0,
-      enrolledCount: enrollMap[p.id] ?? 0,
+      sessionCount: countMap[p.id as string] ?? 0,
+      enrolledCount: enrollMap[p.id as string] ?? 0,
     }));
     res.json(result);
   } catch (err) {

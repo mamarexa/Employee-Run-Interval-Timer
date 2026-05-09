@@ -2,15 +2,12 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { pool } from './db';
 import { seedIfEmpty } from './seed';
 import authRoutes from './routes/auth';
 import programRoutes from './routes/programs';
 import userRoutes from './routes/users';
 import adminRoutes from './routes/admin';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
