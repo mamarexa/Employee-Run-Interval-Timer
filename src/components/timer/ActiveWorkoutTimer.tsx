@@ -14,6 +14,32 @@ export function ActiveWorkoutTimer({ onComplete, onClose }: ActiveWorkoutTimerPr
   const { session, currentIntervalIndex, timeRemaining, isRunning, isFinished, start, pause, tick, endWorkout, nextInterval: skipToNext } = useTimerStore();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 400);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  // Acquire Wake Lock when running — keeps screen on so JS and audio run at full speed
+  useEffect(() => {
+    if (!isRunning) {
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+      return;
+    }
+    const acquire = async () => {
+      try {
+        wakeLockRef.current = await navigator.wakeLock?.request('screen');
+      } catch { /* not supported or denied */ }
+    };
+    acquire();
+    // Re-acquire after visibility change (iOS releases wake lock on visibility change)
+    const reacquire = () => {
+      if (document.visibilityState === 'visible' && isRunning) acquire();
+    };
+    document.addEventListener('visibilitychange', reacquire);
+    return () => {
+      document.removeEventListener('visibilitychange', reacquire);
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+    };
+  }, [isRunning]);
 
   // Create/unlock shared AudioContext on first Start tap (requires user gesture)
   const handleStart = () => {
@@ -96,14 +122,22 @@ export function ActiveWorkoutTimer({ onComplete, onClose }: ActiveWorkoutTimerPr
       play(880, 0, 0.15);
       play(880, 0.2, 0.15);
       navigator.vibrate?.([200, 100, 200]);
+      try { const u = new SpeechSynthesisUtterance('Run!'); u.rate = 1.2; speechSynthesis.speak(u); } catch { /* ignore */ }
     } else if (interval.type === 'walk') {
       play(440, 0, 0.25);
       navigator.vibrate?.([100]);
-    } else {
+      try { const u = new SpeechSynthesisUtterance('Walk'); u.rate = 1.2; speechSynthesis.speak(u); } catch { /* ignore */ }
+    } else if (interval.type === 'cooldown') {
       play(660, 0, 0.1);
       play(660, 0.15, 0.1);
       play(660, 0.3, 0.1);
       navigator.vibrate?.([50, 50, 50]);
+      try { const u = new SpeechSynthesisUtterance('Cool down'); u.rate = 1.2; speechSynthesis.speak(u); } catch { /* ignore */ }
+    } else {
+      play(660, 0, 0.1);
+      play(660, 0.15, 0.1);
+      navigator.vibrate?.([50, 50, 50]);
+      try { const u = new SpeechSynthesisUtterance('Warm up'); u.rate = 1.2; speechSynthesis.speak(u); } catch { /* ignore */ }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIntervalIndex]);
