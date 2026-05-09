@@ -34,16 +34,27 @@ export function ActiveWorkoutTimer({ onComplete, onClose }: ActiveWorkoutTimerPr
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Timer interval
+  // Timer interval — 250ms so it catches up quickly after screen-off throttling
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isRunning) {
       interval = setInterval(() => {
         tick();
-      }, 1000);
+      }, 250);
     }
     return () => clearInterval(interval);
   }, [isRunning, tick]);
+
+  // Catch-up: when app returns to foreground, immediately re-sync the timer
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        useTimerStore.getState().tick();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   // Silent audio keeper — prevents iOS AudioContext suspension
   useEffect(() => {
