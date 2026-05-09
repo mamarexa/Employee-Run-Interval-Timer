@@ -17,9 +17,8 @@ services:
   app:
     build: .
     restart: unless-stopped
-    networks:
-      - default
-      - caddy
+    ports:
+      - "127.0.0.1:3847:3000"
     environment:
       DATABASE_URL: postgres://moncivique:${POSTGRES_PASSWORD}@postgres:5432/moncivique_run
       JWT_SECRET: ${JWT_SECRET}
@@ -33,7 +32,3 @@ services:
 
 volumes:
   postgres_data:
-
-networks:
-  caddy:
-    external: true
