@@ -110,9 +110,9 @@ router.get('/programs', async (_req, res) => {
     const enrolled = await query<{ active_program_id: string; cnt: string }>(
       'SELECT active_program_id, COUNT(*) as cnt FROM users WHERE active_program_id IS NOT NULL GROUP BY active_program_id'
     );
-    const countMap = Object.fromEntries(counts.rows.map(r => [r.program_id, Number(r.cnt)]));
-    const enrollMap = Object.fromEntries(enrolled.rows.map(r => [r.active_program_id, Number(r.cnt)]));
-    const result = programs.rows.map(p => ({
+    const countMap = Object.fromEntries(counts.rows.map((r: { program_id: string; cnt: string }) => [r.program_id, Number(r.cnt)]));
+    const enrollMap = Object.fromEntries(enrolled.rows.map((r: { active_program_id: string; cnt: string }) => [r.active_program_id, Number(r.cnt)]));
+    const result = (programs.rows as Array<Record<string, unknown>>).map(p => ({
       ...p,
       sessionCount: countMap[p.id] ?? 0,
       enrolledCount: enrollMap[p.id] ?? 0,
