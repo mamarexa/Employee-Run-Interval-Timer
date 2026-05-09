@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@theme {
+  --color-glass: rgba(255, 255, 255, 0.15);
+  --color-glass-dark: rgba(0, 0, 0, 0.2);
+  --color-glass-border: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #E0F7FA 0%, #E8F5E9 50%, #E8EAF6 100%);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+  color: #1a202c;
+  min-height: 100vh;
+  background-attachment: fixed;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #1A202C 0%, #2D3748 50%, #4A5568 100%);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+    color: #F7FAFC;
+  }
+}
+
+/* Safe area padding for iOS */
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top, 1rem);
+}
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
