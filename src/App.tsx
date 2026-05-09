@@ -19,7 +19,7 @@ import Admin from './pages/Admin';
 
 // --- Types ---
 interface ApiProgram {
-  id: number;
+  id: string;
   slug: string;
   title: string;
   description: string;
@@ -196,8 +196,8 @@ function MainApp() {
 
   const [programs, setPrograms] = useState<ApiProgram[]>([]);
   const [apiHistory, setApiHistory] = useState<HistoryEntry[]>([]);
-  const [apiProgress, setApiProgress] = useState<Record<number, { current_week: number; current_session: number }>>({});
-  const [activeProgramId, setActiveProgramId] = useState<number | null>(null);
+  const [apiProgress, setApiProgress] = useState<Record<string, { current_week: number; current_session: number }>>({});
+  const [activeProgramId, setActiveProgramId] = useState<string | null>(null);
   const [upcomingSession, setUpcomingSession] = useState<ApiSession | null>(null);
 
   const { user, logout } = useAuthStore();
@@ -211,13 +211,13 @@ function MainApp() {
   useEffect(() => {
     api.get<ApiProgram[]>('/api/programs').then(setPrograms).catch(console.error);
     api.get<{ activeProgramId: string | null }>('/api/auth/me').then(d => {
-      if (d.activeProgramId) setActiveProgramId(Number(d.activeProgramId));
+      if (d.activeProgramId) setActiveProgramId(d.activeProgramId);
     }).catch(console.error);
     api.get<HistoryEntry[]>('/api/me/history').then(setApiHistory).catch(console.error);
     api.get<Record<string, { week: number; session: number }>>('/api/me/progress').then(progressMap => {
-      const map: Record<number, { current_week: number; current_session: number }> = {};
+      const map: Record<string, { current_week: number; current_session: number }> = {};
       Object.entries(progressMap).forEach(([id, p]) => {
-        map[Number(id)] = { current_week: p.week, current_session: p.session };
+        map[id] = { current_week: p.week, current_session: p.session };
       });
       setApiProgress(map);
     }).catch(console.error);
@@ -253,7 +253,7 @@ function MainApp() {
         const curIdx = sessions.findIndex(s => s.week_number === week && s.session_number === sessionNum);
         const next = sessions[curIdx + 1];
         if (next) {
-          await api.post('/api/me/progress', { program_id: programId, current_week: next.week_number, current_session: next.session_number });
+          await api.post('/api/me/progress', { programId, week: next.week_number, session: next.session_number });
           setApiProgress(p => ({ ...p, [programId]: { current_week: next.week_number, current_session: next.session_number } }));
         }
         const history = await api.get<HistoryEntry[]>('/api/me/history');
@@ -269,7 +269,7 @@ function MainApp() {
   const handleCloseTimer = () => { setActiveSessionInfo(null); resetTimer(); setIsTimerActive(false); };
 
   const handleSelectProgram = async (prog: ApiProgram) => {
-    await api.patch('/api/me', { active_program_id: prog.id }).catch(console.error);
+    await api.patch('/api/me', { activeProgramId: prog.id }).catch(console.error);
     setActiveProgramId(prog.id);
     setActiveTab('home');
     setViewingProgram(null);

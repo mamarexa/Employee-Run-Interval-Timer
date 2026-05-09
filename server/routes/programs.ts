@@ -14,7 +14,7 @@ router.get('/', async (_req, res) => {
       'SELECT program_id, COUNT(*) as cnt FROM sessions GROUP BY program_id'
     );
     const countMap = Object.fromEntries(counts.rows.map((r: { program_id: string; cnt: string }) => [r.program_id, Number(r.cnt)]));
-    const result = (programs.rows as Array<Record<string, unknown>>).map(p => ({ ...p, sessionCount: countMap[p.id as string] ?? 0 }));
+    const result = (programs.rows as Array<Record<string, unknown>>).map(p => ({ ...p, session_count: countMap[p.id as string] ?? 0 }));
     res.json(result);
   } catch (err) {
     console.error('GET /programs error:', err);
