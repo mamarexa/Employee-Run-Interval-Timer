@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTimerStore } from '../../store/useTimerStore';
 import { Play, Pause, Square, SkipForward } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -13,6 +13,20 @@ interface ActiveWorkoutTimerProps {
 export function ActiveWorkoutTimer({ onComplete, onClose }: ActiveWorkoutTimerProps) {
   const { session, currentIntervalIndex, timeRemaining, isRunning, isFinished, start, pause, tick, endWorkout, nextInterval: skipToNext } = useTimerStore();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 400);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // Create/unlock shared AudioContext on first Start tap (requires user gesture)
+  const handleStart = () => {
+    if (!audioCtxRef.current) {
+      try {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      } catch { /* ignore */ }
+    }
+    if (audioCtxRef.current?.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    start();
+  };
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -33,54 +47,53 @@ export function ActiveWorkoutTimer({ onComplete, onClose }: ActiveWorkoutTimerPr
 
   // Silent audio keeper — prevents iOS AudioContext suspension
   useEffect(() => {
-    if (!isRunning) return;
-    let ctx: AudioContext | null = null;
-    try {
-      ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.loop = true;
-      src.connect(ctx.destination);
-      src.start();
-    } catch { /* ignore */ }
-    return () => { ctx?.close(); };
+    if (!isRunning || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    if (ctx.state === 'suspended') ctx.resume();
+    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(ctx.destination);
+    src.start();
+    return () => { try { src.stop(); src.disconnect(); } catch { /* ignore */ } };
   }, [isRunning]);
 
-  // Audio & Haptics — fire on interval START (when currentIntervalIndex changes)
+  // Audio & Haptics — fire on interval START using shared AudioContext
   useEffect(() => {
-    if (!session || !isRunning) return;
+    if (!session || !isRunning || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    if (ctx.state === 'suspended') ctx.resume();
     const interval = session.intervals[currentIntervalIndex];
     if (!interval) return;
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const now = audioCtx.currentTime;
-      const play = (freq: number, start: number, duration: number) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+    const now = ctx.currentTime;
+    const play = (freq: number, startOffset: number, duration: number) => {
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        gain.connect(ctx.destination);
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now + start);
-        gain.gain.setValueAtTime(0.7, now + start);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration);
-        osc.start(now + start);
-        osc.stop(now + start + duration);
-      };
-      if (interval.type === 'run') {
-        play(880, 0, 0.15);
-        play(880, 0.2, 0.15);
-        navigator.vibrate?.([200, 100, 200]);
-      } else if (interval.type === 'walk') {
-        play(440, 0, 0.25);
-        navigator.vibrate?.([100]);
-      } else {
-        play(660, 0, 0.1);
-        play(660, 0.15, 0.1);
-        play(660, 0.3, 0.1);
-        navigator.vibrate?.([50, 50, 50]);
-      }
-    } catch { /* ignore */ }
+        osc.frequency.setValueAtTime(freq, now + startOffset);
+        gain.gain.setValueAtTime(0.7, now + startOffset);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration);
+        osc.start(now + startOffset);
+        osc.stop(now + startOffset + duration);
+      } catch { /* ignore */ }
+    };
+    if (interval.type === 'run') {
+      play(880, 0, 0.15);
+      play(880, 0.2, 0.15);
+      navigator.vibrate?.([200, 100, 200]);
+    } else if (interval.type === 'walk') {
+      play(440, 0, 0.25);
+      navigator.vibrate?.([100]);
+    } else {
+      play(660, 0, 0.1);
+      play(660, 0.15, 0.1);
+      play(660, 0.3, 0.1);
+      navigator.vibrate?.([50, 50, 50]);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIntervalIndex]);
 
@@ -265,7 +278,7 @@ export function ActiveWorkoutTimer({ onComplete, onClose }: ActiveWorkoutTimerPr
           </button>
           
           <button 
-            onClick={isRunning ? pause : start}
+            onClick={isRunning ? pause : handleStart}
             className="flex-1 py-4 h-14 rounded-full bg-slate-800 dark:bg-white text-white dark:text-slate-900 font-medium tracking-wide text-sm shadow-[0_8px_16px_rgba(0,0,0,0.1)] active:scale-95 transition-transform flex items-center justify-center"
           >
             {isRunning ? (

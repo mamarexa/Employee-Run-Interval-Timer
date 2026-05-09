@@ -210,13 +210,15 @@ function MainApp() {
 
   useEffect(() => {
     api.get<ApiProgram[]>('/api/programs').then(setPrograms).catch(console.error);
-    api.get<{ active_program_id: number | null }>('/api/auth/me').then(d => {
-      if (d.active_program_id) setActiveProgramId(d.active_program_id);
+    api.get<{ activeProgramId: string | null }>('/api/auth/me').then(d => {
+      if (d.activeProgramId) setActiveProgramId(d.activeProgramId as any);
     }).catch(console.error);
     api.get<HistoryEntry[]>('/api/me/history').then(setApiHistory).catch(console.error);
-    api.get<{ program_id: number; current_week: number; current_session: number }[]>('/api/me/progress').then(rows => {
-      const map: Record<number, { current_week: number; current_session: number }> = {};
-      rows.forEach(r => { map[r.program_id] = { current_week: r.current_week, current_session: r.current_session }; });
+    api.get<Record<string, { week: number; session: number }>>('/api/me/progress').then(progressMap => {
+      const map: Record<string, { current_week: number; current_session: number }> = {};
+      Object.entries(progressMap).forEach(([id, p]) => {
+        map[id] = { current_week: p.week, current_session: p.session };
+      });
       setApiProgress(map);
     }).catch(console.error);
   }, []);
