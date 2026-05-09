@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useSearchParams, useNavigate } from 'react-router-dom';
 import { ActiveWorkoutTimer } from './components/timer/ActiveWorkoutTimer';
 import { useTimerStore, WorkoutSession } from './store/useTimerStore';
@@ -17,7 +17,7 @@ import AuthVerify from './pages/AuthVerify';
 import AdminLogin from './pages/AdminLogin';
 import Admin from './pages/Admin';
 
-// â”€â”€â”€ Types mirroring API responses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Types ---
 interface ApiProgram {
   id: number;
   slug: string;
@@ -28,7 +28,7 @@ interface ApiProgram {
 
 interface IntervalData {
   type: 'run' | 'walk' | 'warmup' | 'cooldown';
-  duration: number; // seconds
+  duration: number;
 }
 
 interface ApiSession {
@@ -49,7 +49,7 @@ interface HistoryEntry {
   program_title: string;
 }
 
-// â”€â”€â”€ Interval grouping (Phase 8b) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Interval grouping ---
 interface GroupedInterval {
   type: IntervalData['type'];
   totalDuration: number;
@@ -88,45 +88,39 @@ function IntervalPills({ intervals }: { intervals: IntervalData[] }) {
   );
 }
 
-// â”€â”€â”€ AuthGate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- AuthGate ---
 function AuthGate({ children }: { children: React.ReactNode }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { pass, token, setAuth, setToken } = useAuthStore();
+  const { pass, token } = useAuthStore();
   const [status, setStatus] = useState<'loading' | 'ok' | 'locked'>('loading');
 
   useEffect(() => {
     const urlPass = searchParams.get('pass');
     (async () => {
-      // 1. magic link in URL â†’ verify
       if (urlPass) {
-        try {
-          const data = await verifyPass(urlPass);
-          setAuth(urlPass, data.token, data.user);
+        const ok = await verifyPass(urlPass);
+        if (ok) {
           navigate('/', { replace: true });
           setStatus('ok');
-          return;
-        } catch {
+        } else {
           setStatus('locked');
-          return;
         }
+        return;
       }
-      // 2. existing JWT valid â†’ proceed
       if (token) {
         try {
           await api.get('/api/auth/me');
           setStatus('ok');
           return;
-        } catch { /* fall through to silent refresh */ }
+        } catch { /* fall through */ }
       }
-      // 3. stored pass â†’ silent refresh
       if (pass) {
-        try {
-          const newToken = await silentRefresh(pass);
-          setToken(newToken);
+        const ok = await silentRefresh();
+        if (ok) {
           setStatus('ok');
           return;
-        } catch { /* fall through */ }
+        }
       }
       setStatus('locked');
     })();
@@ -153,7 +147,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// â”€â”€â”€ MainApp â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- MainApp ---
 function MainApp() {
   const [activeTab, setActiveTab] = useState<'home' | 'programs' | 'profile'>('home');
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -176,7 +170,6 @@ function MainApp() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-  // Load programs + user data on mount
   useEffect(() => {
     api.get<ApiProgram[]>('/api/programs').then(setPrograms).catch(console.error);
     api.get<{ active_program_id: number | null }>('/api/auth/me').then(d => {
@@ -190,7 +183,6 @@ function MainApp() {
     }).catch(console.error);
   }, []);
 
-  // Load upcoming session whenever activeProgramId or progress changes
   useEffect(() => {
     if (!activeProgramId) { setUpcomingSession(null); return; }
     const prog = apiProgress[activeProgramId];
@@ -205,7 +197,7 @@ function MainApp() {
   const handleStartWorkout = (sess: ApiSession, program: ApiProgram) => {
     loadSession({
       id: String(sess.id),
-      title: `${program.title} â€“ ${sess.title}`,
+      title: `${program.title} - ${sess.title}`,
       intervals: sess.interval_data.map(i => ({ type: i.type as WorkoutSession['intervals'][number]['type'], duration: i.duration })),
     });
     setActiveSessionInfo({ programId: program.id, week: sess.week_number, sessionNum: sess.session_number });
@@ -217,7 +209,6 @@ function MainApp() {
       const { programId, week, sessionNum } = activeSessionInfo;
       try {
         await api.post('/api/me/history', { program_id: programId, week_number: week, session_number: sessionNum, feedback });
-        // Advance progress
         const sessions = await api.get<ApiSession[]>(`/api/programs/${programId}/sessions`);
         const curIdx = sessions.findIndex(s => s.week_number === week && s.session_number === sessionNum);
         const next = sessions[curIdx + 1];
@@ -232,8 +223,7 @@ function MainApp() {
     setActiveSessionInfo(null);
     resetTimer();
     setIsTimerActive(false);
-    setToast('Workout complete! ðŸŽ‰');
-    setTimeout(() => setToast(null), 3000);
+    showToast('Workout complete!');
   }, [activeSessionInfo, resetTimer]);
 
   const handleCloseTimer = () => { setActiveSessionInfo(null); resetTimer(); setIsTimerActive(false); };
@@ -251,7 +241,6 @@ function MainApp() {
     setViewingProgram(prog);
   };
 
-  // â”€â”€ Home view â”€â”€
   const renderHome = () => {
     const activeProgram = programs.find(p => p.id === activeProgramId) ?? null;
     if (!activeProgram || !upcomingSession) {
@@ -283,7 +272,9 @@ function MainApp() {
             <div className="w-full bg-white/40 dark:bg-black/20 rounded-full h-3 mb-2 overflow-hidden shadow-inner">
               <motion.div className="h-full bg-slate-900 dark:bg-white rounded-full origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: completedCount / totalSessions }} transition={{ duration: 1, ease: 'easeOut' }} />
             </div>
-            <p className="text-slate-600 dark:text-white/80 font-semibold text-sm">{progressPercent}% Complete <span className="text-slate-400 font-normal">({completedCount}/{totalSessions})</span></p>
+            <p className="text-slate-600 dark:text-white/80 font-semibold text-sm">
+              {progressPercent}% Complete <span className="text-slate-400 font-normal">({completedCount}/{totalSessions})</span>
+            </p>
           </div>
           <div className="space-y-4 w-full bg-white/40 dark:bg-black/10 p-5 rounded-[24px]">
             <div className="flex justify-between text-sm text-slate-600 dark:text-white/80">
@@ -305,7 +296,6 @@ function MainApp() {
     );
   };
 
-  // â”€â”€ Programs view â”€â”€
   const renderPrograms = () => {
     if (viewingProgram) {
       const weeks = Array.from(new Set(programSessions.map(s => s.week_number)));
@@ -388,7 +378,6 @@ function MainApp() {
     );
   };
 
-  // â”€â”€ Profile view â”€â”€
   const renderProfile = () => (
     <div className="w-full max-w-md px-6 pt-12 pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
       <div className="flex items-center gap-4 mb-8">
@@ -438,9 +427,9 @@ function MainApp() {
               <GlassCard key={entry.id} className="p-5 flex justify-between items-center">
                 <div>
                   <p className="text-sm font-bold text-slate-800 dark:text-white">{entry.program_title}</p>
-                  <p className="text-xs text-slate-500 dark:text-white/60 font-medium">W{entry.week_number} S{entry.session_number} â€¢ {date}</p>
+                  <p className="text-xs text-slate-500 dark:text-white/60 font-medium">W{entry.week_number} S{entry.session_number} &bull; {date}</p>
                 </div>
-                <div className="text-2xl">{entry.feedback === 'easy' ? 'ðŸ˜Œ' : entry.feedback === 'perfect' ? 'ðŸ”¥' : 'ðŸ¥µ'}</div>
+                <div className="text-2xl">{entry.feedback === 'easy' ? '😌' : entry.feedback === 'perfect' ? '🔥' : '🥵'}</div>
               </GlassCard>
             );
           })}
@@ -458,65 +447,6 @@ function MainApp() {
           </motion.div>
         )}
       </AnimatePresence>
-      <AnimatePresence mode="wait">
-        {!isTimerActive ? (
-          <motion.div key="main-app" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
-            {activeTab === 'home' && renderHome()}
-            {activeTab === 'programs' && renderPrograms()}
-            {activeTab === 'profile' && renderProfile()}
-            <BottomNav currentTab={activeTab} onChange={setActiveTab} />
-          </motion.div>
-        ) : (
-          <motion.div key="timer" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="fixed inset-0 w-full h-[100dvh] pb-safe-pb z-[100] bg-gradient-to-br from-[#E0F7FA] via-[#E8F5E9] to-[#E8EAF6] dark:from-[#1A202C] dark:via-[#2D3748] dark:to-[#4A5568]">
-            <ActiveWorkoutTimer onComplete={handleCompleteWorkout} onClose={handleCloseTimer} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// â”€â”€â”€ Root App with Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export default function App() {
-  return (
-    <Routes>
-      <Route path="/auth/verify" element={<AuthVerify />} />
-      <Route path="/admin" element={<AdminLogin />} />
-      <Route path="/admin/dashboard" element={<Admin />} />
-      <Route path="/*" element={<AuthGate><MainApp /></AuthGate>} />
-    </Routes>
-  );
-}
-  
-      <AnimatePresence mode="wait">
-        {!isTimerActive ? (
-          <motion.div key="main-app" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
-            {activeTab === 'home' && renderHome()}
-            {activeTab === 'programs' && renderPrograms()}
-            {activeTab === 'profile' && renderProfile()}
-            <BottomNav currentTab={activeTab} onChange={setActiveTab} />
-          </motion.div>
-        ) : (
-          <motion.div key="timer" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="fixed inset-0 w-full h-[100dvh] pb-safe-pb z-[100] bg-gradient-to-br from-[#E0F7FA] via-[#E8F5E9] to-[#E8EAF6] dark:from-[#1A202C] dark:via-[#2D3748] dark:to-[#4A5568]">
-            <ActiveWorkoutTimer onComplete={handleCompleteWorkout} onClose={handleCloseTimer} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// --- Root App with Routes ---
-export default function App() {
-  return (
-    <Routes>
-      <Route path="/auth/verify" element={<AuthVerify />} />
-      <Route path="/admin" element={<AdminLogin />} />
-      <Route path="/admin/dashboard" element={<Admin />} />
-      <Route path="/*" element={<AuthGate><MainApp /></AuthGate>} />
-    </Routes>
-  );
-}
       <AnimatePresence mode="wait">
         {!isTimerActive ? (
           <motion.div key="main-app" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
