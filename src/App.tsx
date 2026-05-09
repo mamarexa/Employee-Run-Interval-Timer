@@ -305,7 +305,7 @@ function MainApp() {
 
     return (
       <div className="w-full max-w-sm px-6 safe-area-pt pb-32 space-y-6 flex flex-col mx-auto">
-        <GlassCard className="p-8 text-center space-y-8 flex flex-col items-center">
+        <GlassCard className="p-8 text-center space-y-8 flex flex-col items-center mt-4">
           <div className="space-y-2 w-full">
             <h2 className="text-slate-500 dark:text-white/60 text-xs tracking-widest uppercase font-semibold">Up Next</h2>
             <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight leading-tight mb-4">{activeProgram.title}</h1>
