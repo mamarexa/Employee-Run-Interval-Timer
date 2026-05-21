@@ -360,19 +360,21 @@ function MainApp() {
     setProgramSessions(sessions);
     setViewingProgram(prog);
   };
-
   const renderHome = () => {
     const activeProgram = programs.find(p => p.id === activeProgramId) ?? null;
     if (!activeProgram || !upcomingSession) {
       return (
-        <div className="flex flex-col items-center justify-center p-8 text-center h-[100dvh] space-y-6">
-          <GlassCard className="p-8 w-full max-w-sm">
+        <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 flex flex-col justify-center items-center mx-auto text-center space-y-6 min-h-[80dvh]">
+          <div className="w-full bg-white/5 dark:bg-white/[0.02] border border-white/5 rounded-[24px] p-8 mt-8">
             <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">No Active Program</h2>
-            <p className="text-slate-600 dark:text-white/70 mb-6">Head over to the Programs tab to pick a training plan and get started.</p>
-            <button onClick={() => setActiveTab('programs')} className="w-full py-4 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold">
+            <p className="text-slate-600 dark:text-white/70 mb-6 text-sm">Head over to the Programs tab to pick a training plan and get started.</p>
+            <button 
+              onClick={() => setActiveTab('programs')} 
+              className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-sm transition-all"
+            >
               Browse Programs
             </button>
-          </GlassCard>
+          </div>
         </div>
       );
     }
@@ -385,74 +387,106 @@ function MainApp() {
 
     return (
       <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 space-y-6 flex flex-col mx-auto">
-        <GlassCard className="p-8 text-center space-y-8 flex flex-col items-center mt-4">
-          <div className="space-y-2 w-full">
-            <h2 className="text-slate-500 dark:text-white/60 text-xs tracking-widest uppercase font-semibold">Up Next</h2>
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight leading-tight mb-4">{activeProgram.title}</h1>
-            <div className="w-full bg-white/40 dark:bg-black/20 rounded-full h-3 mb-2 overflow-hidden shadow-inner">
-              <motion.div className="h-full bg-slate-900 dark:bg-white rounded-full origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: completedCount / totalSessions }} transition={{ duration: 1, ease: 'easeOut' }} />
-            </div>
-            <p className="text-slate-600 dark:text-white/80 font-semibold text-sm">
-              {progressPercent}% Complete <span className="text-slate-400 font-normal">({completedCount}/{totalSessions})</span>
-            </p>
+        <div className="space-y-1.5 mt-6 text-center">
+          <h2 className="text-slate-500 dark:text-white/40 text-[10px] tracking-widest uppercase font-extrabold">Up Next</h2>
+          <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight leading-tight">{activeProgram.title}</h1>
+        </div>
+
+        {/* Progress Container */}
+        <div className="bg-white/5 dark:bg-white/[0.02] border border-white/5 rounded-[24px] p-6 text-center space-y-4">
+          <div className="w-full bg-slate-200 dark:bg-white/5 rounded-full h-3 overflow-hidden shadow-inner">
+            <motion.div 
+              className="h-full bg-emerald-500 rounded-full origin-left" 
+              initial={{ scaleX: 0 }} 
+              animate={{ scaleX: completedCount / totalSessions }} 
+              transition={{ duration: 1, ease: 'easeOut' }} 
+            />
           </div>
-          <div className="space-y-4 w-full bg-white/40 dark:bg-black/10 p-5 rounded-[24px]">
-            <div className="flex justify-between text-sm text-slate-600 dark:text-white/80">
-              <span className="font-medium text-slate-500">Scheduled For</span>
-              <span className="font-semibold text-slate-800 dark:text-white">Week {upcomingSession.week_number}, Day {upcomingSession.session_number}</span>
-            </div>
-            <div className="flex justify-between text-sm text-slate-600 dark:text-white/80">
-              <span className="font-medium text-slate-500">Total Time</span>
-              <span className="font-semibold text-slate-800 dark:text-white">{mins} mins</span>
-            </div>
+          <p className="text-slate-600 dark:text-white/80 font-bold text-sm">
+            {progressPercent}% Complete <span className="text-slate-400 dark:text-white/30 font-normal">({completedCount}/{totalSessions})</span>
+          </p>
+        </div>
+
+        {/* Workout Details Container */}
+        <div className="bg-white/5 dark:bg-white/[0.02] border border-white/5 rounded-[24px] p-5 space-y-4">
+          <div className="flex justify-between items-center text-sm">
+            <span className="font-bold text-slate-400 dark:text-white/40 uppercase text-[10px] tracking-wider">Scheduled For</span>
+            <span className="font-extrabold text-slate-800 dark:text-white">Week {upcomingSession.week_number}, Day {upcomingSession.session_number}</span>
           </div>
-          <AnimatePresence>
-            <motion.div key={`slide-${prog?.current_week}-${prog?.current_session}`} className="w-full" exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              <SlideToStart className="mt-2" onStart={() => handleStartWorkout(upcomingSession, activeProgram)} resetDep={activeTab} />
-            </motion.div>
-          </AnimatePresence>
-        </GlassCard>
+          <div className="h-[1px] bg-slate-100 dark:bg-white/5" />
+          <div className="flex justify-between items-center text-sm">
+            <span className="font-bold text-slate-400 dark:text-white/40 uppercase text-[10px] tracking-wider">Total Time</span>
+            <span className="font-extrabold text-slate-800 dark:text-white">{mins} mins</span>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          <motion.div 
+            key={`slide-${prog?.current_week}-${prog?.current_session}`} 
+            className="w-full mt-2" 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.3 }}
+          >
+            <SlideToStart className="mt-2" onStart={() => handleStartWorkout(upcomingSession, activeProgram)} resetDep={activeTab} />
+          </motion.div>
+        </AnimatePresence>
       </div>
     );
   };
-
   const renderPrograms = () => {
     if (viewingProgram) {
       const weeks = Array.from(new Set(programSessions.map(s => s.week_number)));
       return (
         <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 space-y-6 mx-auto flex flex-col">
-          <button onClick={() => setViewingProgram(null)} className="flex items-center gap-2 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white font-semibold mb-2">
-            <ChevronLeft className="w-5 h-5" /> Back
+          <button 
+            onClick={() => setViewingProgram(null)} 
+            className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-white/50 hover:text-slate-800 dark:hover:text-white font-bold mb-2 uppercase tracking-wider self-start"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back
           </button>
-          <h1 className="text-4xl font-extrabold text-slate-800 dark:text-white tracking-tight">{viewingProgram.title}</h1>
-          <p className="text-slate-600 dark:text-white/80 text-lg leading-relaxed">{viewingProgram.description}</p>
-          <div className="flex-1 space-y-8 mt-8">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight leading-tight">{viewingProgram.title}</h1>
+            <p className="text-sm text-slate-650 dark:text-white/70 leading-relaxed">{viewingProgram.description}</p>
+          </div>
+          <div className="flex-1 space-y-6 mt-4">
             {weeks.map(week => (
-              <div key={week} className="space-y-4">
-                <h3 className="font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest text-sm">Week {week}</h3>
-                <div className="space-y-3">
+              <div key={week} className="space-y-3">
+                <h3 className="font-extrabold text-slate-400 dark:text-white/40 uppercase tracking-widest text-[10px] pl-1">Week {week}</h3>
+                <div className="bg-white/5 dark:bg-white/[0.02] border border-white/5 rounded-[24px] divide-y divide-slate-150 dark:divide-white/5 overflow-hidden">
                   {programSessions.filter(s => s.week_number === week).map(session => {
                     const totalMins = Math.floor(session.interval_data.reduce((a, b) => a + b.duration, 0) / 60);
                     return (
-                      <GlassCard key={session.id} className="p-4 flex flex-col gap-3 bg-white/50 dark:bg-black/20 cursor-pointer active:scale-95 transition-transform" onClick={() => handleStartWorkout(session, viewingProgram)}>
+                      <div 
+                        key={session.id} 
+                        className="p-5 flex flex-col gap-3 cursor-pointer hover:bg-white/[0.04] dark:hover:bg-white/[0.02] active:scale-[0.99] transition-all" 
+                        onClick={() => handleStartWorkout(session, viewingProgram)}
+                      >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
-                            <Play className="w-4 h-4 text-slate-800 dark:text-white" />
-                            <span className="font-bold text-slate-800 dark:text-white">Workout {session.session_number}</span>
+                            <Play className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500/20" />
+                            <span className="font-bold text-sm text-slate-800 dark:text-white">Workout {session.session_number}</span>
                           </div>
-                          <span className="text-slate-600 dark:text-white/70 text-sm font-semibold">{totalMins} mins</span>
+                          <span className="text-slate-500 dark:text-white/50 text-xs font-bold">{totalMins} mins</span>
                         </div>
                         <IntervalPills intervals={session.interval_data} />
-                      </GlassCard>
+                      </div>
                     );
                   })}
                 </div>
               </div>
             ))}
           </div>
-          <div className="pt-8 pb-4">
-            <button onClick={() => handleSelectProgram(viewingProgram)} className="w-full py-4 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-lg shadow-xl">
-              {activeProgramId === viewingProgram.id ? 'Currently Active' : 'Start this Program'}
+          <div className="pt-4 pb-4">
+            <button 
+              onClick={() => handleSelectProgram(viewingProgram)} 
+              className={cn(
+                "w-full py-4 rounded-2xl font-bold text-sm shadow-sm transition-all",
+                activeProgramId === viewingProgram.id
+                  ? "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white cursor-default"
+                  : "bg-emerald-500 hover:bg-emerald-600 text-white"
+              )}
+            >
+              {activeProgramId === viewingProgram.id ? 'Currently Active Program' : 'Start this Program'}
             </button>
           </div>
         </div>
@@ -460,7 +494,7 @@ function MainApp() {
     }
     return (
       <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 space-y-6 mx-auto flex flex-col">
-        <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-8 tracking-tight">Programs</h1>
+        <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-4 mt-6 tracking-tight">Programs</h1>
         <div className="flex flex-col gap-4">
           {programs.map(prog => {
             const isActive = activeProgramId === prog.id;
@@ -468,29 +502,52 @@ function MainApp() {
             const completedCount = apiHistory.filter(h => h.program_id === prog.id).length;
             const progressPercent = Math.round((completedCount / prog.session_count) * 100) || 0;
             return (
-              <GlassCard key={prog.id} className="p-6 text-left relative overflow-hidden cursor-pointer hover:bg-white/50 transition-colors" onClick={() => handleViewProgram(prog)}>
-                {isActive && (
-                  <div className="absolute top-0 right-0 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">Active</div>
+              <div 
+                key={prog.id} 
+                className={cn(
+                  "p-6 text-left relative overflow-hidden rounded-[28px] bg-white/5 dark:bg-white/[0.02] border transition-all cursor-pointer hover:bg-white/[0.08] dark:hover:bg-white/[0.04]",
+                  isActive ? "border-emerald-500/20 dark:border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.05)]" : "border-white/5"
                 )}
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{prog.title}</h3>
-                <p className="text-sm text-slate-600 dark:text-white/70 mb-4 leading-relaxed bg-white/30 dark:bg-black/20 p-4 rounded-xl">{prog.description}</p>
-                <div className="flex justify-between items-center bg-white/20 dark:bg-white/5 p-3 rounded-2xl">
-                  <span className="text-xs font-semibold text-slate-600 dark:text-white/60 uppercase tracking-widest">{prog.session_count} Sessions</span>
-                  <button onClick={e => { e.stopPropagation(); handleSelectProgram(prog); }} className="px-6 py-2 rounded-full font-bold text-sm bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm">
+                onClick={() => handleViewProgram(prog)}
+              >
+                {isActive && (
+                  <span className="absolute top-4 right-4 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Active
+                  </span>
+                )}
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2 pr-12">{prog.title}</h3>
+                <p className="text-sm text-slate-650 dark:text-white/70 mb-4 leading-relaxed">{prog.description}</p>
+                <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-white/5">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest">{prog.session_count} Sessions</span>
+                  <button 
+                    onClick={e => { e.stopPropagation(); handleSelectProgram(prog); }} 
+                    className={cn(
+                      "px-5 py-2 rounded-xl font-bold text-xs shadow-sm transition-all",
+                      isActive 
+                        ? "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20"
+                        : "bg-emerald-500 hover:bg-emerald-600 text-white"
+                    )}
+                  >
                     {isActive ? 'Continue' : 'Start'}
                   </button>
                 </div>
                 {isActive && progStatus && (
-                  <div className="mt-4">
-                    <div className="flex justify-between text-xs mb-1 font-semibold text-slate-600 dark:text-white/60">
-                      <span>Progress</span><span>{progressPercent}%</span>
+                  <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/5 space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider">
+                      <span>Progress</span>
+                      <span>{progressPercent}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 dark:bg-black/40 rounded-full h-1.5 overflow-hidden">
-                      <motion.div className="h-full bg-slate-900 dark:bg-white rounded-full origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: completedCount / prog.session_count }} transition={{ duration: 0.8, ease: 'easeOut' }} />
+                    <div className="w-full bg-slate-200 dark:bg-white/5 rounded-full h-2 overflow-hidden">
+                      <motion.div 
+                        className="h-full bg-emerald-500 rounded-full origin-left" 
+                        initial={{ scaleX: 0 }} 
+                        animate={{ scaleX: completedCount / prog.session_count }} 
+                        transition={{ duration: 0.8, ease: 'easeOut' }} 
+                      />
                     </div>
                   </div>
                 )}
-              </GlassCard>
+              </div>
             );
           })}
         </div>
