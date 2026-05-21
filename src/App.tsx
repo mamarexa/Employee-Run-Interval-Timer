@@ -305,14 +305,75 @@ function MainApp() {
 
   useEffect(() => {
     if (!activeProgramId) { setUpcomingSession(null); return; }
-    const prog = apiProgress[activeProgramId];
-    const week = Number(prog?.current_week ?? 1);
-    const session = Number(prog?.current_session ?? 1);
-    api.get<ApiSession[]>(`/api/programs/${activeProgramId}/sessions`).then(sessions => {
-      const found = sessions.find(s => Number(s.week_number) === week && Number(s.session_number) === session);
-      setUpcomingSession(found ?? sessions[0] ?? null);
+    
+    api.get<ApiSession[]>(`/api/programs/${activeProgramId}/sessions`).then(async (sessions) => {
+      if (sessions.length === 0) { setUpcomingSession(null); return; }
+      
+      // 1. Sort sessions to ensure correct sequential order
+      const sortedSessions = [...sessions].sort((a, b) => {
+        if (Number(a.week_number) !== Number(b.week_number)) {
+          return Number(a.week_number) - Number(b.week_number);
+        }
+        return Number(a.session_number) - Number(b.session_number);
+      });
+      
+      // 2. Identify completed sessions from history
+      const completedSet = new Set(
+        apiHistory
+          .filter(h => String(h.program_id) === String(activeProgramId))
+          .map(h => `${h.week_number}-${h.session_number}`)
+      );
+      
+      let uncompletedIdx = sortedSessions.findIndex(s => !completedSet.has(`${s.week_number}-${s.session_number}`));
+      if (uncompletedIdx === -1) {
+        // All sessions completed
+        uncompletedIdx = sortedSessions.length;
+      }
+      
+      // 3. Find progress-based session index
+      const prog = apiProgress[activeProgramId];
+      let progressIdx = 0;
+      if (prog) {
+        progressIdx = sortedSessions.findIndex(
+          s => Number(s.week_number) === Number(prog.current_week) && 
+               Number(s.session_number) === Number(prog.current_session)
+        );
+        if (progressIdx === -1) progressIdx = 0;
+      }
+      
+      // 4. Use whichever is further ahead
+      const targetIdx = Math.max(uncompletedIdx, progressIdx);
+      
+      if (targetIdx >= sortedSessions.length) {
+        // All sessions completed
+        setUpcomingSession(null);
+      } else {
+        const targetSession = sortedSessions[targetIdx];
+        setUpcomingSession(targetSession);
+        
+        // 5. Auto-sync database progress if it is out of sync or missing
+        if (!prog || Number(prog.current_week) !== Number(targetSession.week_number) || Number(prog.current_session) !== Number(targetSession.session_number)) {
+          try {
+            await api.post('/api/me/progress', { 
+              programId: activeProgramId, 
+              week: Number(targetSession.week_number), 
+              session: Number(targetSession.session_number) 
+            });
+            // Update local state to match
+            setApiProgress(p => ({ 
+              ...p, 
+              [activeProgramId]: { 
+                current_week: Number(targetSession.week_number), 
+                current_session: Number(targetSession.session_number) 
+              } 
+            }));
+          } catch (e) {
+            console.error('Failed to sync progress to database:', e);
+          }
+        }
+      }
     }).catch(console.error);
-  }, [activeProgramId, apiProgress]);
+  }, [activeProgramId, apiProgress, apiHistory]);
 
   const handleStartWorkout = (sess: ApiSession, program: ApiProgram) => {
     loadSession({
@@ -362,6 +423,65 @@ function MainApp() {
   };
   const renderHome = () => {
     const activeProgram = programs.find(p => p.id === activeProgramId) ?? null;
+    const completedCount = activeProgramId ? apiHistory.filter(h => h.program_id === activeProgramId).length : 0;
+    const totalSessions = activeProgram?.session_count ?? 0;
+    const isCompleted = activeProgramId && totalSessions > 0 && completedCount >= totalSessions;
+
+    // Show loading skeleton if active program is selected but details are still loading
+    if (activeProgramId && (!activeProgram || (!upcomingSession && !isCompleted))) {
+      return (
+        <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 flex flex-col justify-center items-center mx-auto text-center min-h-[80dvh]">
+          <div className="animate-pulse space-y-6 w-full mt-8">
+            <div className="h-3 w-16 bg-slate-200 dark:bg-white/5 rounded-full mx-auto" />
+            <div className="h-8 w-48 bg-slate-200 dark:bg-white/5 rounded-full mx-auto" />
+            <div className="h-24 bg-white/5 dark:bg-white/[0.02] border border-white/5 rounded-[24px]" />
+            <div className="h-28 bg-white/5 dark:bg-white/[0.02] border border-white/5 rounded-[24px]" />
+          </div>
+        </div>
+      );
+    }
+
+    // Show congratulations screen if user has completed the program
+    if (activeProgram && isCompleted) {
+      return (
+        <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 space-y-6 flex flex-col mx-auto">
+          <div className="space-y-1.5 mt-6 text-center">
+            <h2 className="text-slate-500 dark:text-white/40 text-[10px] tracking-widest uppercase font-extrabold text-amber-500 dark:text-amber-400">🎉 Program Completed!</h2>
+            <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight leading-tight">{activeProgram.title}</h1>
+          </div>
+
+          {/* Progress Container at 100% */}
+          <div className="bg-white/5 dark:bg-white/[0.02] border border-white/5 rounded-[24px] p-6 text-center space-y-4">
+            <div className="w-full bg-slate-200 dark:bg-white/5 rounded-full h-3 overflow-hidden shadow-inner">
+              <motion.div 
+                className="h-full bg-emerald-500 rounded-full origin-left" 
+                initial={{ scaleX: 0 }} 
+                animate={{ scaleX: 1 }} 
+                transition={{ duration: 1, ease: 'easeOut' }} 
+              />
+            </div>
+            <p className="text-slate-600 dark:text-white/80 font-bold text-sm">
+              100% Complete <span className="text-slate-400 dark:text-white/30 font-normal">({completedCount}/{totalSessions})</span>
+            </p>
+          </div>
+
+          {/* Congratulations Banner / Message */}
+          <div className="bg-white/5 dark:bg-white/[0.02] border border-white/5 rounded-[24px] p-6 text-center space-y-3">
+            <p className="text-sm text-slate-650 dark:text-white/80 leading-relaxed">
+              Outstanding effort! You've successfully finished every workout in this program. Your consistency and dedication are paying off.
+            </p>
+          </div>
+
+          <button 
+            onClick={() => setActiveTab('programs')} 
+            className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-sm transition-all"
+          >
+            Explore Other Programs
+          </button>
+        </div>
+      );
+    }
+
     if (!activeProgram || !upcomingSession) {
       return (
         <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 flex flex-col justify-center items-center mx-auto text-center space-y-6 min-h-[80dvh]">
@@ -378,9 +498,8 @@ function MainApp() {
         </div>
       );
     }
+
     const prog = apiProgress[activeProgramId!];
-    const totalSessions = activeProgram.session_count;
-    const completedCount = apiHistory.filter(h => h.program_id === activeProgramId).length;
     const progressPercent = Math.round((completedCount / totalSessions) * 100) || 0;
     const totalSeconds = upcomingSession.interval_data.reduce((a, b) => a + b.duration, 0);
     const mins = Math.floor(totalSeconds / 60);
