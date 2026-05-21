@@ -82,7 +82,7 @@ router.get('/progress', async (req, res) => {
     // Return as a map: { programId: { week, session } }
     const progressMap: Record<string, { week: number; session: number }> = {};
     for (const row of result.rows) {
-      progressMap[row.program_id] = { week: row.current_week, session: row.current_session };
+      progressMap[row.program_id] = { week: Number(row.current_week), session: Number(row.current_session) };
     }
     res.json(progressMap);
   } catch (err) {
@@ -106,7 +106,7 @@ router.post('/progress', async (req, res) => {
          SET current_week = EXCLUDED.current_week,
              current_session = EXCLUDED.current_session,
              updated_at = NOW()`,
-      [req.user!.userId, programId, week, session]
+      [req.user!.userId, programId, Number(week), Number(session)]
     );
     res.json({ ok: true });
   } catch (err) {
@@ -156,7 +156,14 @@ router.post('/history', async (req, res) => {
       `INSERT INTO history (user_id, session_id, program_id, week_number, session_number, feedback)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id`,
-      [req.user!.userId, sessionId || null, programId || null, weekNumber || null, sessionNumber || null, feedback]
+      [
+        req.user!.userId,
+        sessionId || null,
+        programId || null,
+        weekNumber != null ? Number(weekNumber) : null,
+        sessionNumber != null ? Number(sessionNumber) : null,
+        feedback
+      ]
     );
     res.status(201).json({ id: result.rows[0].id });
   } catch (err) {

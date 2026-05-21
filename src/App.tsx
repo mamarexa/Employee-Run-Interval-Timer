@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useSearchParams, useNavigate } from 'react-router-dom';
 import { ActiveWorkoutTimer } from './components/timer/ActiveWorkoutTimer';
 import { useTimerStore, WorkoutSession } from './store/useTimerStore';
@@ -50,40 +50,119 @@ interface HistoryEntry {
 }
 
 // --- Interval grouping ---
-interface GroupedInterval {
-  type: IntervalData['type'];
-  totalDuration: number;
+interface RepeatGroup {
+  type: 'repeat';
   count: number;
+  pattern: IntervalData[];
 }
 
-function groupIntervals(intervals: IntervalData[]): GroupedInterval[] {
-  const groups: GroupedInterval[] = [];
-  for (const inv of intervals) {
-    const last = groups[groups.length - 1];
-    if (last && last.type === inv.type) {
-      last.totalDuration += inv.duration;
-      last.count += 1;
-    } else {
-      groups.push({ type: inv.type, totalDuration: inv.duration, count: 1 });
+interface SingleGroup {
+  type: 'single';
+  interval: IntervalData;
+}
+
+type DisplayGroup = RepeatGroup | SingleGroup;
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = seconds / 60;
+  if (Number.isInteger(mins)) {
+    return `${mins}m`;
+  }
+  return `${mins.toFixed(1).replace(/\.0$/, '')}m`;
+}
+
+function getDisplayGroups(intervals: IntervalData[]): DisplayGroup[] {
+  const groups: DisplayGroup[] = [];
+  let i = 0;
+  
+  while (i < intervals.length) {
+    if (i + 3 < intervals.length) {
+      const p1 = intervals[i];
+      const p2 = intervals[i + 1];
+      
+      let count = 0;
+      let j = i;
+      while (j + 1 < intervals.length) {
+        const c1 = intervals[j];
+        const c2 = intervals[j + 1];
+        if (
+          c1.type === p1.type && c1.duration === p1.duration &&
+          c2.type === p2.type && c2.duration === p2.duration
+        ) {
+          count++;
+          j += 2;
+        } else {
+          break;
+        }
+      }
+      
+      if (count >= 2) {
+        groups.push({
+          type: 'repeat',
+          count,
+          pattern: [p1, p2],
+        });
+        i = j;
+        continue;
+      }
     }
+    
+    groups.push({
+      type: 'single',
+      interval: intervals[i],
+    });
+    i++;
   }
   return groups;
 }
 
 function IntervalPills({ intervals }: { intervals: IntervalData[] }) {
-  const groups = groupIntervals(intervals);
+  const groups = getDisplayGroups(intervals);
   return (
-    <div className="flex gap-1.5 flex-wrap">
-      {groups.map((g, idx) => (
-        <span key={idx} className={cn(
-          'text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md',
-          g.type === 'run' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' :
-          g.type === 'walk' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' :
-          'bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300'
-        )}>
-          {Math.round(g.totalDuration / 60)}m {g.type}
-        </span>
-      ))}
+    <div className="flex gap-1.5 flex-wrap items-center">
+      {groups.map((g, idx) => {
+        if (g.type === 'single') {
+          const { type, duration } = g.interval;
+          return (
+            <span
+              key={idx}
+              className={cn(
+                'text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md shadow-sm border transition-all duration-200 hover:scale-[1.02]',
+                type === 'run' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-500/20' :
+                type === 'walk' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-500/20' :
+                'bg-slate-50 dark:bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-100 dark:border-slate-500/20'
+              )}
+            >
+              {formatDuration(duration)} {type}
+            </span>
+          );
+        } else {
+          const { count, pattern } = g;
+          return (
+            <div
+              key={idx}
+              className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-indigo-100 dark:border-indigo-500/20 shadow-sm transition-all duration-200 hover:scale-[1.02]"
+            >
+              <span>{count}x</span>
+              <span className="opacity-55">(</span>
+              {pattern.map((p, pIdx) => (
+                <span key={pIdx} className="flex items-center">
+                  {pIdx > 0 && <span className="mx-0.5 opacity-55">+</span>}
+                  <span className={cn(
+                    p.type === 'run' ? 'text-emerald-600 dark:text-emerald-400' :
+                    p.type === 'walk' ? 'text-blue-600 dark:text-blue-400' :
+                    ''
+                  )}>
+                    {formatDuration(p.duration)} {p.type}
+                  </span>
+                </span>
+              ))}
+              <span className="opacity-55">)</span>
+            </div>
+          );
+        }
+      })}
     </div>
   );
 }
@@ -191,7 +270,7 @@ function MainApp() {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [viewingProgram, setViewingProgram] = useState<ApiProgram | null>(null);
   const [programSessions, setProgramSessions] = useState<ApiSession[]>([]);
-  const [activeSessionInfo, setActiveSessionInfo] = useState<{ programId: number; week: number; sessionNum: number } | null>(null);
+  const [activeSessionInfo, setActiveSessionInfo] = useState<{ programId: string; week: number; sessionNum: number } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const [programs, setPrograms] = useState<ApiProgram[]>([]);
@@ -226,10 +305,10 @@ function MainApp() {
   useEffect(() => {
     if (!activeProgramId) { setUpcomingSession(null); return; }
     const prog = apiProgress[activeProgramId];
-    const week = prog?.current_week ?? 1;
-    const session = prog?.current_session ?? 1;
+    const week = Number(prog?.current_week ?? 1);
+    const session = Number(prog?.current_session ?? 1);
     api.get<ApiSession[]>(`/api/programs/${activeProgramId}/sessions`).then(sessions => {
-      const found = sessions.find(s => s.week_number === week && s.session_number === session);
+      const found = sessions.find(s => Number(s.week_number) === week && Number(s.session_number) === session);
       setUpcomingSession(found ?? sessions[0] ?? null);
     }).catch(console.error);
   }, [activeProgramId, apiProgress]);
@@ -248,13 +327,13 @@ function MainApp() {
     if (activeSessionInfo) {
       const { programId, week, sessionNum } = activeSessionInfo;
       try {
-        await api.post('/api/me/history', { programId, weekNumber: week, sessionNumber: sessionNum, feedback });
+        await api.post('/api/me/history', { programId, weekNumber: Number(week), sessionNumber: Number(sessionNum), feedback });
         const sessions = await api.get<ApiSession[]>(`/api/programs/${programId}/sessions`);
-        const curIdx = sessions.findIndex(s => s.week_number === week && s.session_number === sessionNum);
+        const curIdx = sessions.findIndex(s => Number(s.week_number) === Number(week) && Number(s.session_number) === Number(sessionNum));
         const next = sessions[curIdx + 1];
         if (next) {
-          await api.post('/api/me/progress', { programId, week: next.week_number, session: next.session_number });
-          setApiProgress(p => ({ ...p, [programId]: { current_week: next.week_number, current_session: next.session_number } }));
+          await api.post('/api/me/progress', { programId, week: Number(next.week_number), session: Number(next.session_number) });
+          setApiProgress(p => ({ ...p, [programId]: { current_week: Number(next.week_number), current_session: Number(next.session_number) } }));
         }
         const history = await api.get<HistoryEntry[]>('/api/me/history');
         setApiHistory(history);
