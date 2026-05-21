@@ -8,7 +8,7 @@ import { api, verifyPass, silentRefresh } from './lib/api';
 import { GlassCard } from './components/ui/glass-card';
 import { BottomNav } from './components/ui/bottom-nav';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, LogOut, ChevronLeft } from 'lucide-react';
+import { Play, LogOut, ChevronLeft, Activity, Clock, Zap, Calendar } from 'lucide-react';
 import { SlideToStart } from './components/ui/slide-to-start';
 import { CHARACTERS } from './store/useUserStore';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -41,12 +41,13 @@ interface ApiSession {
 
 interface HistoryEntry {
   id: number;
-  program_id: number;
+  program_id: number | string;
   week_number: number;
   session_number: number;
   completed_at: string;
   feedback: string;
   program_title: string;
+  interval_data?: IntervalData[];
 }
 
 // --- Interval grouping ---
@@ -530,72 +531,221 @@ function MainApp() {
     }
   };
 
-  const renderProfile = () => (
-    <div className="w-full max-w-md px-6 safe-area-pt pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
-      <div className="flex items-center gap-4 mb-8">
-        <label className="relative cursor-pointer group">
-          <input type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
-          <img
-            src={avatarUrl ?? `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(user?.name ?? 'User')}&backgroundColor=1A202C`}
-            alt="avatar"
-            className="w-16 h-16 rounded-full border-2 border-white shadow-md bg-white/50 object-cover"
-          />
-          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
-            <span className="text-white text-[10px] font-bold">EDIT</span>
+  const renderProfile = () => {
+    // 1. Calculate stats
+    let totalRunSeconds = 0;
+    let totalActiveSeconds = 0;
+    apiHistory.forEach(entry => {
+      if (entry.interval_data && Array.isArray(entry.interval_data)) {
+        entry.interval_data.forEach(inv => {
+          if (inv.type === 'run') {
+            totalRunSeconds += inv.duration;
+          }
+          totalActiveSeconds += inv.duration;
+        });
+      } else {
+        totalRunSeconds += 8 * 60; // default estimate
+        totalActiveSeconds += 26 * 60; // default estimate
+      }
+    });
+    const totalRunMinutes = Math.round(totalRunSeconds / 60);
+    const totalActiveMinutes = Math.round(totalActiveSeconds / 60);
+
+    // 2. Consistency Grid (last 28 days) & Streak Calculation
+    const today = new Date();
+    const gridDays: Date[] = [];
+    for (let i = 27; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      gridDays.push(d);
+    }
+    const completedDates = new Set(
+      apiHistory.map(h => new Date(h.completed_at).toDateString())
+    );
+
+    // Calculate current streak
+    let currentStreak = 0;
+    let checkDate = new Date(today);
+    const workedOutToday = completedDates.has(checkDate.toDateString());
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const workedOutYesterday = completedDates.has(yesterday.toDateString());
+    
+    if (workedOutToday || workedOutYesterday) {
+      if (!workedOutToday) {
+        checkDate = yesterday;
+      }
+      while (completedDates.has(checkDate.toDateString())) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+    }
+
+    return (
+      <div className="w-full max-w-md px-6 safe-area-pt pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
+        {/* Profile Header */}
+        <div className="flex items-center gap-4 mb-4">
+          <label className="relative cursor-pointer group">
+            <input type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
+            <img
+              src={avatarUrl ?? `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(user?.name ?? 'User')}&backgroundColor=1A202C`}
+              alt="avatar"
+              className="w-16 h-16 rounded-full border-2 border-white shadow-md bg-white/50 object-cover"
+            />
+            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+              <span className="text-white text-[10px] font-bold">EDIT</span>
+            </div>
+          </label>
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{user?.name ?? 'Runner'}</h1>
+            <p className="text-xs text-slate-500 dark:text-white/50 mt-0.5">Tap photo to change</p>
           </div>
-        </label>
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{user?.name ?? 'Runner'}</h1>
-          <p className="text-xs text-white/50 mt-0.5">Tap photo to change</p>
         </div>
-      </div>
-      <GlassCard className="p-2 mb-8">
-        <button onClick={() => { logout(); showToast('Signed out.'); }} className="flex items-center gap-3 w-full p-4 text-left hover:bg-white/20 rounded-2xl transition-colors text-red-500">
-          <LogOut className="w-5 h-5" />
-          <span className="font-semibold flex-1">Sign Out</span>
-        </button>
-      </GlassCard>
 
-      <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4 tracking-tight">Your Character</h2>
-      <GlassCard className="p-4 mb-8">
+        {/* Consistency Calendar - Hero Card */}
+        <GlassCard className="p-5 bg-white/40 dark:bg-black/10 border-l-4 border-l-emerald-500 shadow-md">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-emerald-500" />
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-700 dark:text-white/80">Consistency Calendar</h3>
+            </div>
+            {currentStreak > 0 && (
+              <div className="flex items-center gap-1 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">
+                🔥 {currentStreak} Day Streak
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
+            <div className="flex items-end gap-3">
+              {/* Day Labels */}
+              <div className="grid grid-rows-7 gap-2 text-[9px] font-extrabold text-slate-400 dark:text-white/40 uppercase leading-[18px] pb-1">
+                <span>M</span>
+                <span>T</span>
+                <span>W</span>
+                <span>T</span>
+                <span>F</span>
+                <span>S</span>
+                <span>S</span>
+              </div>
+              
+              {/* 7x4 Grid */}
+              <div className="grid grid-flow-col grid-cols-4 grid-rows-7 gap-2 p-2 bg-slate-100 dark:bg-black/30 rounded-2xl border border-white/10 shadow-inner">
+                {gridDays.map((day, idx) => {
+                  const completed = completedDates.has(day.toDateString());
+                  const isToday = day.toDateString() === today.toDateString();
+                  return (
+                    <div
+                      key={idx}
+                      title={`${day.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${completed ? 'Completed' : 'No workout'}`}
+                      className={cn(
+                        "w-[18px] h-[18px] rounded-md transition-all duration-300",
+                        completed 
+                          ? "bg-emerald-500 dark:bg-emerald-400 shadow-md shadow-emerald-500/30 scale-105" 
+                          : "bg-slate-200 dark:bg-white/10 hover:bg-slate-350 dark:hover:bg-white/20",
+                        isToday && !completed && "border-2 border-indigo-500 dark:border-indigo-400 animate-pulse"
+                      )}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Calendar Stats Summary */}
+            <div className="flex flex-col justify-center text-center sm:text-left gap-2 min-w-[120px]">
+              <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/20 dark:border-white/5">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Active Days</span>
+                <span className="text-2xl font-black text-slate-800 dark:text-white">{completedDates.size} <span className="text-xs font-semibold text-slate-400">/ 28</span></span>
+              </div>
+              <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/20 dark:border-white/5">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Frequency</span>
+                <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{Math.round((completedDates.size / 28) * 100)}%</span>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Quick Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
-          {CHARACTERS.map(char => {
-            const isSelected = char.id === selectedCharacterId;
-            return (
-              <button key={char.id} onClick={() => setSelectedCharacter(char.id)} className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border-2 ${isSelected ? 'bg-slate-900/5 dark:bg-white/10 border-slate-900 dark:border-white' : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
-                <div className="w-16 h-16 rounded-xl bg-white/40 dark:bg-black/20 flex items-center justify-center p-2 mb-1">
-                  <div className="w-full h-full drop-shadow-md" style={{ filter: char.id === 'running-guy' ? 'brightness(0) invert(1)' : 'none' }}>
-                    <DotLottieReact src={char.url} loop autoplay />
-                  </div>
-                </div>
-                <span className={`text-[10px] font-bold text-center uppercase tracking-wider ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-white/60'}`}>{char.name}</span>
-              </button>
-            );
-          })}
+          <GlassCard className="p-3 text-center flex flex-col items-center justify-center bg-white/40 dark:bg-black/10">
+            <Activity className="w-5 h-5 text-indigo-500 mb-1" />
+            <span className="text-xl font-black text-slate-800 dark:text-white">{apiHistory.length}</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 mt-0.5">Workouts</span>
+          </GlassCard>
+          
+          <GlassCard className="p-3 text-center flex flex-col items-center justify-center bg-white/40 dark:bg-black/10">
+            <Clock className="w-5 h-5 text-emerald-500 mb-1" />
+            <span className="text-xl font-black text-slate-800 dark:text-white">{totalRunMinutes}m</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 mt-0.5">Run Time</span>
+          </GlassCard>
+          
+          <GlassCard className="p-3 text-center flex flex-col items-center justify-center bg-white/40 dark:bg-black/10">
+            <Zap className="w-5 h-5 text-amber-500 mb-1" />
+            <span className="text-xl font-black text-slate-800 dark:text-white">{totalActiveMinutes}m</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 mt-0.5">Active</span>
+          </GlassCard>
         </div>
-      </GlassCard>
 
-      <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4 tracking-tight">Workout History</h2>
-      {apiHistory.length === 0 ? (
-        <GlassCard className="p-8 text-center text-slate-600 dark:text-white/70">No workouts completed yet. Let's get moving!</GlassCard>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {apiHistory.map(entry => {
-            const date = new Date(entry.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-            return (
-              <GlassCard key={entry.id} className="p-5 flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-bold text-slate-800 dark:text-white">{entry.program_title}</p>
-                  <p className="text-xs text-slate-500 dark:text-white/60 font-medium">W{entry.week_number} S{entry.session_number} &bull; {date}</p>
-                </div>
-                <div className="text-2xl">{entry.feedback === 'easy' ? '😌' : entry.feedback === 'perfect' ? '🔥' : '🥵'}</div>
-              </GlassCard>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+        {/* Character Selection */}
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white mt-8 tracking-tight">Your Character</h2>
+        <GlassCard className="p-4 bg-white/40 dark:bg-black/10">
+          <div className="grid grid-cols-3 gap-3">
+            {CHARACTERS.map(char => {
+              const isSelected = char.id === selectedCharacterId;
+              return (
+                <button key={char.id} onClick={() => setSelectedCharacter(char.id)} className={cn("flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border-2", isSelected ? 'bg-slate-900/5 dark:bg-white/10 border-slate-900 dark:border-white' : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5')}>
+                  <div className="w-16 h-16 rounded-xl bg-white/40 dark:bg-black/20 flex items-center justify-center p-2 mb-1">
+                    <div className="w-full h-full drop-shadow-md" style={{ filter: char.id === 'running-guy' ? 'brightness(0) invert(1)' : 'none' }}>
+                      <DotLottieReact src={char.url} loop autoplay />
+                    </div>
+                  </div>
+                  <span className={cn('text-[10px] font-bold text-center uppercase tracking-wider', isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-white/60')}>{char.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </GlassCard>
+
+        {/* Sign Out */}
+        <GlassCard className="p-2">
+          <button onClick={() => { logout(); showToast('Signed out.'); }} className="flex items-center gap-3 w-full p-4 text-left hover:bg-white/20 rounded-2xl transition-colors text-red-500">
+            <LogOut className="w-5 h-5" />
+            <span className="font-semibold flex-1">Sign Out</span>
+          </button>
+        </GlassCard>
+
+        {/* Workout History */}
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white mt-8 tracking-tight">Workout History</h2>
+        {apiHistory.length === 0 ? (
+          <GlassCard className="p-8 text-center text-slate-600 dark:text-white/70">No workouts completed yet. Let's get moving!</GlassCard>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {apiHistory.map(entry => {
+              const date = new Date(entry.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+              return (
+                <GlassCard key={entry.id} className="p-4 flex flex-col gap-3 bg-white/40 dark:bg-black/10 border-l-4 border-l-slate-800 dark:border-l-white">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm font-bold text-slate-800 dark:text-white">{entry.program_title}</p>
+                      <p className="text-xs text-slate-500 dark:text-white/60 font-semibold mt-0.5">Week {entry.week_number}, Workout {entry.session_number} &bull; {date}</p>
+                    </div>
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/60 dark:bg-black/20 text-xl shadow-sm">
+                      {entry.feedback === 'easy' ? '😌' : entry.feedback === 'perfect' ? '🔥' : '🥵'}
+                    </div>
+                  </div>
+                  {entry.interval_data && Array.isArray(entry.interval_data) && (
+                    <div className="pt-1 border-t border-slate-200 dark:border-white/5">
+                      <IntervalPills intervals={entry.interval_data} />
+                    </div>
+                  )}
+                </GlassCard>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-[100dvh] w-full font-sans text-slate-900 dark:text-white relative">

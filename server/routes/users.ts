@@ -127,11 +127,15 @@ router.get('/history', async (req, res) => {
       completed_at: string;
       feedback: string | null;
       program_title: string | null;
+      interval_data: any;
     }>(
       `SELECT h.id, h.session_id, h.program_id, h.week_number, h.session_number,
-              h.completed_at, h.feedback, p.title as program_title
+              h.completed_at, h.feedback, p.title as program_title, s.interval_data
        FROM history h
        LEFT JOIN programs p ON h.program_id = p.id
+       LEFT JOIN sessions s ON s.program_id = h.program_id 
+                          AND s.week_number = h.week_number 
+                          AND s.session_number = h.session_number
        WHERE h.user_id = $1
        ORDER BY h.completed_at DESC
        LIMIT 100`,
