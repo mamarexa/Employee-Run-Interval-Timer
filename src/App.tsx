@@ -553,12 +553,22 @@ function MainApp() {
 
     // 2. Consistency Grid (last 28 days) & Streak Calculation
     const today = new Date();
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    // Find the Monday of the week that was 3 weeks ago (to show 4 weeks total)
+    const dayOfWeek = today.getDay();
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    
+    const startDate = new Date(todayMidnight);
+    startDate.setDate(todayMidnight.getDate() - daysSinceMonday - 21);
+    
     const gridDays: Date[] = [];
-    for (let i = 27; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
+    for (let i = 0; i < 28; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
       gridDays.push(d);
     }
+
     const completedDates = new Set<string>();
     apiHistory.forEach(h => {
       completedDates.add(new Date(h.completed_at).toDateString());
@@ -603,72 +613,6 @@ function MainApp() {
           </div>
         </div>
 
-        {/* Consistency Calendar - Hero Card */}
-        <GlassCard className="p-5 bg-white/40 dark:bg-black/10 border-l-4 border-l-emerald-500 shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-emerald-500" />
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-700 dark:text-white/80">Consistency Calendar</h3>
-            </div>
-            {currentStreak > 0 && (
-              <div className="flex items-center gap-1 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">
-                🔥 {currentStreak} Day Streak
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
-            <div className="flex items-end gap-3">
-              {/* Day Labels */}
-              <div className="grid grid-rows-7 gap-2 text-[9px] font-extrabold text-slate-400 dark:text-white/40 uppercase leading-[18px] pb-1">
-                <span>M</span>
-                <span>T</span>
-                <span>W</span>
-                <span>T</span>
-                <span>F</span>
-                <span>S</span>
-                <span>S</span>
-              </div>
-              
-              {/* 7x4 Grid */}
-              <div className="grid grid-flow-col grid-cols-4 grid-rows-7 gap-2 p-2 bg-slate-100 dark:bg-black/30 rounded-2xl border border-white/10 shadow-inner">
-                {gridDays.map((day, idx) => {
-                  const completed = completedDates.has(day.toDateString());
-                  const isToday = day.toDateString() === today.toDateString();
-                  return (
-                    <div
-                      key={idx}
-                      title={`${day.toLocaleDateString('default', { month: 'short', day: 'numeric' })}: ${completed ? 'Completed' : 'No workout'}`}
-                      className={cn(
-                        "w-[18px] h-[18px] rounded-md transition-all duration-300",
-                        completed 
-                          ? "bg-emerald-500 dark:bg-emerald-400 shadow-md shadow-emerald-500/30 scale-105" 
-                          : "bg-slate-200 dark:bg-white/10 hover:bg-slate-350 dark:hover:bg-white/20",
-                        isToday && !completed && "border-2 border-indigo-500 dark:border-indigo-400 animate-pulse"
-                      )}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Calendar Stats Summary */}
-            <div className="flex flex-col justify-center text-center sm:text-left gap-2 min-w-[120px]">
-              <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/20 dark:border-white/5">
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Active Days</span>
-                <span className="text-2xl font-black text-slate-800 dark:text-white">
-                  {completedDates.size}{" "}
-                  <span className="text-xs font-semibold text-slate-400">/ 28</span>
-                </span>
-              </div>
-              <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/20 dark:border-white/5">
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Frequency</span>
-                <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{Math.round((completedDates.size / 28) * 100)}%</span>
-              </div>
-            </div>
-          </div>
-        </GlassCard>
-
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
           <GlassCard className="p-3 text-center flex flex-col items-center justify-center bg-white/40 dark:bg-black/10">
@@ -710,12 +654,74 @@ function MainApp() {
           </div>
         </GlassCard>
 
-        {/* Sign Out */}
-        <GlassCard className="p-2">
-          <button onClick={() => { logout(); showToast('Signed out.'); }} className="flex items-center gap-3 w-full p-4 text-left hover:bg-white/20 rounded-2xl transition-colors text-red-500">
-            <LogOut className="w-5 h-5" />
-            <span className="font-semibold flex-1">Sign Out</span>
-          </button>
+        {/* Consistency Calendar - Hero Card */}
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white mt-8 tracking-tight">Consistency Calendar</h2>
+        <GlassCard className="p-5 bg-white/40 dark:bg-black/10 border-l-4 border-l-emerald-500 shadow-md">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-emerald-500" />
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-700 dark:text-white/80">Workout Streak</h3>
+            </div>
+            {currentStreak > 0 && (
+              <div className="flex items-center gap-1 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">
+                🔥 {currentStreak} Day Streak
+              </div>
+            )}
+          </div>
+
+          <div className="max-w-xs mx-auto">
+            {/* Weekday Labels (horizontal headers) */}
+            <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-extrabold text-slate-400 dark:text-white/40 uppercase mb-1">
+              <span>M</span>
+              <span>T</span>
+              <span>W</span>
+              <span>T</span>
+              <span>F</span>
+              <span>S</span>
+              <span>S</span>
+            </div>
+            
+            {/* 4x7 Horizontal Grid */}
+            <div className="grid grid-cols-7 gap-2 p-2 bg-slate-100 dark:bg-black/30 rounded-2xl border border-white/10 shadow-inner">
+              {gridDays.map((day, idx) => {
+                const completed = completedDates.has(day.toDateString());
+                const isToday = day.toDateString() === todayMidnight.toDateString();
+                const isFuture = day > todayMidnight;
+                return (
+                  <div
+                    key={idx}
+                    title={`${day.toLocaleDateString('default', { month: 'short', day: 'numeric' })}: ${completed ? 'Completed' : 'No workout'}`}
+                    className={cn(
+                      "w-8 h-8 rounded-lg transition-all duration-300 flex items-center justify-center",
+                      isFuture
+                        ? "bg-slate-100/50 dark:bg-white/5 opacity-40 cursor-not-allowed border border-dashed border-slate-300 dark:border-white/10"
+                        : completed 
+                          ? "bg-emerald-500 dark:bg-emerald-400 shadow-md shadow-emerald-500/30 scale-105" 
+                          : "bg-slate-200 dark:bg-white/10 hover:bg-slate-350 dark:hover:bg-white/20",
+                      isToday && !completed && "border-2 border-indigo-500 dark:border-indigo-400 animate-pulse"
+                    )}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Stats below the calendar grid */}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/15 dark:border-white/5 text-center">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Active Days</span>
+              <span className="text-xl font-black text-slate-800 dark:text-white">
+                {completedDates.size}{" "}
+                <span className="text-xs font-semibold text-slate-400">/ 28</span>
+              </span>
+            </div>
+            <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/15 dark:border-white/5 text-center">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Frequency</span>
+              <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                {Math.round((completedDates.size / 28) * 100)}%
+              </span>
+            </div>
+          </div>
         </GlassCard>
 
         {/* Workout History */}
@@ -747,6 +753,14 @@ function MainApp() {
             })}
           </div>
         )}
+
+        {/* Sign Out */}
+        <GlassCard className="p-2">
+          <button onClick={() => { logout(); showToast('Signed out.'); }} className="flex items-center gap-3 w-full p-4 text-left hover:bg-white/20 rounded-2xl transition-colors text-red-500">
+            <LogOut className="w-5 h-5" />
+            <span className="font-semibold flex-1">Sign Out</span>
+          </button>
+        </GlassCard>
       </div>
     );
   };
