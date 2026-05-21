@@ -272,32 +272,32 @@ export function ActiveWorkoutTimer({ onComplete, onClose }: ActiveWorkoutTimerPr
   if (isFinished) {
     return (
       <div className="flex flex-col items-center justify-center h-full space-y-8 p-6">
-        <GlassCard className="w-full max-w-md p-8 text-center space-y-8 bg-white/40">
+        <GlassCard className="w-full max-w-md p-8 text-center space-y-8 bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 shadow-xl">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Workout Complete!</h2>
-            <p className="text-slate-600 font-medium">How did that feel?</p>
+            <h2 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">Workout Complete!</h2>
+            <p className="text-slate-600 dark:text-white/70 font-medium">How did that feel?</p>
           </div>
           <div className="flex justify-center gap-4">
             <button 
               onClick={() => onComplete?.('easy')}
-              className="flex flex-col items-center p-4 bg-white/40 rounded-[24px] hover:bg-white/60 transition-colors w-24"
+              className="flex flex-col items-center p-4 bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-[24px] hover:bg-white/60 dark:hover:bg-white/10 transition-colors w-24"
             >
               <span className="text-4xl">😌</span>
-              <span className="text-slate-700 mt-2 font-semibold">Easy</span>
+              <span className="text-slate-700 dark:text-slate-200 mt-2 font-semibold">Easy</span>
             </button>
             <button 
               onClick={() => onComplete?.('perfect')}
-              className="flex flex-col items-center p-4 bg-white/40 rounded-[24px] hover:bg-white/60 transition-colors w-24"
+              className="flex flex-col items-center p-4 bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-[24px] hover:bg-white/60 dark:hover:bg-white/10 transition-colors w-24"
             >
               <span className="text-4xl">🔥</span>
-              <span className="text-slate-700 mt-2 font-semibold">Perfect</span>
+              <span className="text-slate-700 dark:text-slate-200 mt-2 font-semibold">Perfect</span>
             </button>
             <button 
               onClick={() => onComplete?.('hard')}
-              className="flex flex-col items-center p-4 bg-white/40 rounded-[24px] hover:bg-white/60 transition-colors w-24"
+              className="flex flex-col items-center p-4 bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-[24px] hover:bg-white/60 dark:hover:bg-white/10 transition-colors w-24"
             >
               <span className="text-4xl">🥵</span>
-              <span className="text-slate-700 mt-2 font-semibold">Hard</span>
+              <span className="text-slate-700 dark:text-slate-200 mt-2 font-semibold">Hard</span>
             </button>
           </div>
         </GlassCard>

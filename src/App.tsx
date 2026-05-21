@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useSearchParams, useNavigate } from 'react-router-dom';
 import { ActiveWorkoutTimer } from './components/timer/ActiveWorkoutTimer';
 import { useTimerStore, WorkoutSession } from './store/useTimerStore';
@@ -559,9 +559,10 @@ function MainApp() {
       d.setDate(today.getDate() - i);
       gridDays.push(d);
     }
-    const completedDates = new Set(
-      apiHistory.map(h => new Date(h.completed_at).toDateString())
-    );
+    const completedDates = new Set<string>();
+    apiHistory.forEach(h => {
+      completedDates.add(new Date(h.completed_at).toDateString());
+    });
 
     // Calculate current streak
     let currentStreak = 0;
@@ -637,7 +638,7 @@ function MainApp() {
                   return (
                     <div
                       key={idx}
-                      title={`${day.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${completed ? 'Completed' : 'No workout'}`}
+                      title={`${day.toLocaleDateString('default', { month: 'short', day: 'numeric' })}: ${completed ? 'Completed' : 'No workout'}`}
                       className={cn(
                         "w-[18px] h-[18px] rounded-md transition-all duration-300",
                         completed 
@@ -655,7 +656,10 @@ function MainApp() {
             <div className="flex flex-col justify-center text-center sm:text-left gap-2 min-w-[120px]">
               <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/20 dark:border-white/5">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Active Days</span>
-                <span className="text-2xl font-black text-slate-800 dark:text-white">{completedDates.size} <span className="text-xs font-semibold text-slate-400">/ 28</span></span>
+                <span className="text-2xl font-black text-slate-800 dark:text-white">
+                  {completedDates.size}{" "}
+                  <span className="text-xs font-semibold text-slate-400">/ 28</span>
+                </span>
               </div>
               <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/20 dark:border-white/5">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Frequency</span>
@@ -721,7 +725,7 @@ function MainApp() {
         ) : (
           <div className="flex flex-col gap-4">
             {apiHistory.map(entry => {
-              const date = new Date(entry.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+              const date = new Date(entry.completed_at).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
               return (
                 <GlassCard key={entry.id} className="p-4 flex flex-col gap-3 bg-white/40 dark:bg-black/10 border-l-4 border-l-slate-800 dark:border-l-white">
                   <div className="flex justify-between items-start">
@@ -733,7 +737,7 @@ function MainApp() {
                       {entry.feedback === 'easy' ? '😌' : entry.feedback === 'perfect' ? '🔥' : '🥵'}
                     </div>
                   </div>
-                  {entry.interval_data && Array.isArray(entry.interval_data) && (
+                  {entry.interval_data && entry.interval_data.length > 0 && (
                     <div className="pt-1 border-t border-slate-200 dark:border-white/5">
                       <IntervalPills intervals={entry.interval_data} />
                     </div>
