@@ -384,7 +384,7 @@ function MainApp() {
     const mins = Math.floor(totalSeconds / 60);
 
     return (
-      <div className="w-full max-w-sm px-6 safe-area-pt pb-32 space-y-6 flex flex-col mx-auto">
+      <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 space-y-6 flex flex-col mx-auto">
         <GlassCard className="p-8 text-center space-y-8 flex flex-col items-center mt-4">
           <div className="space-y-2 w-full">
             <h2 className="text-slate-500 dark:text-white/60 text-xs tracking-widest uppercase font-semibold">Up Next</h2>
@@ -420,7 +420,7 @@ function MainApp() {
     if (viewingProgram) {
       const weeks = Array.from(new Set(programSessions.map(s => s.week_number)));
       return (
-        <div className="w-full max-w-md px-6 safe-area-pt pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar flex flex-col">
+        <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 space-y-6 mx-auto flex flex-col">
           <button onClick={() => setViewingProgram(null)} className="flex items-center gap-2 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white font-semibold mb-2">
             <ChevronLeft className="w-5 h-5" /> Back
           </button>
@@ -459,7 +459,7 @@ function MainApp() {
       );
     }
     return (
-      <div className="w-full max-w-md px-6 safe-area-pt pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
+      <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 space-y-6 mx-auto flex flex-col">
         <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-8 tracking-tight">Programs</h1>
         <div className="flex flex-col gap-4">
           {programs.map(prog => {
@@ -593,15 +593,15 @@ function MainApp() {
     }
 
     return (
-      <div className="w-full max-w-md px-6 safe-area-pt pb-32 space-y-6 mx-auto overflow-y-auto min-h-[100dvh] no-scrollbar">
+      <div className="w-full max-w-md px-4 sm:px-6 safe-area-pt pb-36 space-y-8 mx-auto flex flex-col">
         {/* Profile Header */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4">
           <label className="relative cursor-pointer group">
             <input type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
             <img
               src={avatarUrl ?? `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(user?.name ?? 'User')}&backgroundColor=1A202C`}
               alt="avatar"
-              className="w-16 h-16 rounded-full border-2 border-white shadow-md bg-white/50 object-cover"
+              className="w-16 h-16 rounded-full border-2 border-white/20 shadow-md bg-white/5 object-cover"
             />
             <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
               <span className="text-white text-[10px] font-bold">EDIT</span>
@@ -613,65 +613,67 @@ function MainApp() {
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-3 gap-3">
-          <GlassCard className="p-3 text-center flex flex-col items-center justify-center bg-white/40 dark:bg-black/10">
-            <Activity className="w-5 h-5 text-indigo-500 mb-1" />
-            <span className="text-xl font-black text-slate-800 dark:text-white">{apiHistory.length}</span>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 mt-0.5">Workouts</span>
-          </GlassCard>
-          
-          <GlassCard className="p-3 text-center flex flex-col items-center justify-center bg-white/40 dark:bg-black/10">
-            <Clock className="w-5 h-5 text-emerald-500 mb-1" />
-            <span className="text-xl font-black text-slate-800 dark:text-white">{totalRunMinutes}m</span>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 mt-0.5">Run Time</span>
-          </GlassCard>
-          
-          <GlassCard className="p-3 text-center flex flex-col items-center justify-center bg-white/40 dark:bg-black/10">
-            <Zap className="w-5 h-5 text-amber-500 mb-1" />
-            <span className="text-xl font-black text-slate-800 dark:text-white">{totalActiveMinutes}m</span>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 mt-0.5">Active</span>
-          </GlassCard>
+        {/* Quick Stats Grid - Flat row with dividers */}
+        <div className="flex justify-around py-4 border-y border-slate-100 dark:border-white/10">
+          <div className="text-center flex-1">
+            <span className="block text-2xl font-black text-slate-800 dark:text-white leading-none">{apiHistory.length}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 block mt-1.5">Workouts</span>
+          </div>
+          <div className="w-[1px] bg-slate-100 dark:bg-white/10 self-stretch animate-pulse" />
+          <div className="text-center flex-1">
+            <span className="block text-2xl font-black text-slate-800 dark:text-white leading-none">{totalRunMinutes}m</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 block mt-1.5">Run Time</span>
+          </div>
+          <div className="w-[1px] bg-slate-100 dark:bg-white/10 self-stretch animate-pulse" />
+          <div className="text-center flex-1">
+            <span className="block text-2xl font-black text-slate-800 dark:text-white leading-none">{totalActiveMinutes}m</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 block mt-1.5">Active</span>
+          </div>
         </div>
 
         {/* Character Selection */}
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white mt-8 tracking-tight">Your Character</h2>
-        <GlassCard className="p-4 bg-white/40 dark:bg-black/10">
-          <div className="grid grid-cols-3 gap-3">
+        <div>
+          <h2 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest mb-3">Your Character</h2>
+          <div className="grid grid-cols-3 gap-3 bg-white/5 dark:bg-white/[0.02] p-2 rounded-[24px] border border-white/5">
             {CHARACTERS.map(char => {
               const isSelected = char.id === selectedCharacterId;
               return (
-                <button key={char.id} onClick={() => setSelectedCharacter(char.id)} className={cn("flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border-2", isSelected ? 'bg-slate-900/5 dark:bg-white/10 border-slate-900 dark:border-white' : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5')}>
-                  <div className="w-16 h-16 rounded-xl bg-white/40 dark:bg-black/20 flex items-center justify-center p-2 mb-1">
+                <button
+                  key={char.id}
+                  onClick={() => setSelectedCharacter(char.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border",
+                    isSelected 
+                      ? 'bg-white/10 dark:bg-white/10 border-slate-900 dark:border-white/30 shadow-md scale-105' 
+                      : 'border-transparent hover:bg-black/5 dark:hover:bg-white/[0.02]'
+                  )}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-white/10 dark:bg-black/20 flex items-center justify-center p-1.5 mb-1">
                     <div className="w-full h-full drop-shadow-md" style={{ filter: char.id === 'running-guy' ? 'brightness(0) invert(1)' : 'none' }}>
                       <DotLottieReact src={char.url} loop autoplay />
                     </div>
                   </div>
-                  <span className={cn('text-[10px] font-bold text-center uppercase tracking-wider', isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-white/60')}>{char.name}</span>
+                  <span className={cn('text-[9px] font-bold text-center uppercase tracking-wider', isSelected ? 'text-slate-800 dark:text-white' : 'text-slate-500 dark:text-white/40')}>{char.name}</span>
                 </button>
               );
             })}
           </div>
-        </GlassCard>
+        </div>
 
-        {/* Consistency Calendar - Hero Card */}
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white mt-8 tracking-tight">Consistency Calendar</h2>
-        <GlassCard className="p-5 bg-white/40 dark:bg-black/10 border-l-4 border-l-emerald-500 shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-emerald-500" />
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-700 dark:text-white/80">Workout Streak</h3>
-            </div>
+        {/* Consistency Calendar - Flat Widget */}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest">Consistency Calendar</h2>
             {currentStreak > 0 && (
-              <div className="flex items-center gap-1 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-black animate-pulse">
+              <span className="text-xs font-bold text-amber-500 dark:text-amber-400 flex items-center gap-1">
                 🔥 {currentStreak} Day Streak
-              </div>
+              </span>
             )}
           </div>
-
-          <div className="max-w-xs mx-auto">
+          
+          <div className="bg-white/5 dark:bg-white/[0.02] p-4 sm:p-5 rounded-[24px] border border-white/5">
             {/* Weekday Labels (horizontal headers) */}
-            <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-extrabold text-slate-400 dark:text-white/40 uppercase mb-1">
+            <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-extrabold text-slate-400 dark:text-white/40 uppercase mb-2">
               <span>M</span>
               <span>T</span>
               <span>W</span>
@@ -682,85 +684,92 @@ function MainApp() {
             </div>
             
             {/* 4x7 Horizontal Grid */}
-            <div className="grid grid-cols-7 gap-2 p-2 bg-slate-100 dark:bg-black/30 rounded-2xl border border-white/10 shadow-inner">
+            <div className="grid grid-cols-7 gap-2">
               {gridDays.map((day, idx) => {
                 const completed = completedDates.has(day.toDateString());
                 const isToday = day.toDateString() === todayMidnight.toDateString();
                 const isFuture = day > todayMidnight;
+                const dateNum = day.getDate();
                 return (
                   <div
                     key={idx}
-                    title={`${day.toLocaleDateString('default', { month: 'short', day: 'numeric' })}: ${completed ? 'Completed' : 'No workout'}`}
+                    title={`${day.toLocaleDateString('default', { month: 'short', day: 'numeric' })}`}
                     className={cn(
-                      "w-8 h-8 rounded-lg transition-all duration-300 flex items-center justify-center",
+                      "aspect-square w-full rounded-full transition-all duration-300 flex items-center justify-center text-[11px] font-bold",
                       isFuture
-                        ? "bg-slate-100/50 dark:bg-white/5 opacity-40 cursor-not-allowed border border-dashed border-slate-300 dark:border-white/10"
+                        ? "border border-dashed border-slate-300 dark:border-white/10 text-slate-500/20 dark:text-white/10 opacity-30 cursor-not-allowed"
                         : completed 
-                          ? "bg-emerald-500 dark:bg-emerald-400 shadow-md shadow-emerald-500/30 scale-105" 
-                          : "bg-slate-200 dark:bg-white/10 hover:bg-slate-350 dark:hover:bg-white/20",
+                          ? "bg-emerald-500 dark:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-105" 
+                          : "bg-slate-200/50 dark:bg-white/5 text-slate-500 dark:text-white/40 hover:bg-slate-350 dark:hover:bg-white/10",
                       isToday && !completed && "border-2 border-indigo-500 dark:border-indigo-400 animate-pulse"
                     )}
-                  />
+                  >
+                    {dateNum}
+                  </div>
                 );
               })}
             </div>
-          </div>
 
-          {/* Stats below the calendar grid */}
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/15 dark:border-white/5 text-center">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Active Days</span>
-              <span className="text-xl font-black text-slate-800 dark:text-white">
-                {completedDates.size}{" "}
-                <span className="text-xs font-semibold text-slate-400">/ 28</span>
-              </span>
-            </div>
-            <div className="bg-white/25 dark:bg-white/5 p-3 rounded-2xl border border-white/15 dark:border-white/5 text-center">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">Frequency</span>
-              <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                {Math.round((completedDates.size / 28) * 100)}%
-              </span>
+            {/* Stats below the calendar grid - Flat divider styling */}
+            <div className="flex justify-around mt-5 pt-4 border-t border-slate-100 dark:border-white/5">
+              <div className="text-center flex-1">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 mb-1">Active Days</span>
+                <span className="text-base font-black text-slate-800 dark:text-white">
+                  {completedDates.size}{" "}
+                  <span className="text-xs font-semibold text-slate-400 dark:text-white/30">/ 28</span>
+                </span>
+              </div>
+              <div className="w-[1px] bg-slate-100 dark:bg-white/5 self-stretch" />
+              <div className="text-center flex-1">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 mb-1">Frequency</span>
+                <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                  {Math.round((completedDates.size / 28) * 100)}%
+                </span>
+              </div>
             </div>
           </div>
-        </GlassCard>
+        </div>
 
         {/* Workout History */}
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white mt-8 tracking-tight">Workout History</h2>
-        {apiHistory.length === 0 ? (
-          <GlassCard className="p-8 text-center text-slate-600 dark:text-white/70">No workouts completed yet. Let's get moving!</GlassCard>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {apiHistory.map(entry => {
-              const date = new Date(entry.completed_at).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
-              return (
-                <GlassCard key={entry.id} className="p-4 flex flex-col gap-3 bg-white/40 dark:bg-black/10 border-l-4 border-l-slate-800 dark:border-l-white">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-bold text-slate-800 dark:text-white">{entry.program_title}</p>
-                      <p className="text-xs text-slate-500 dark:text-white/60 font-semibold mt-0.5">Week {entry.week_number}, Workout {entry.session_number} &bull; {date}</p>
+        <div>
+          <h2 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest mb-3">Workout History</h2>
+          {apiHistory.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 dark:text-white/50 text-sm">No workouts completed yet. Let's get moving!</div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-white/5">
+              {apiHistory.map(entry => {
+                const date = new Date(entry.completed_at).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
+                return (
+                  <div key={entry.id} className="py-4 flex flex-col gap-2.5">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{entry.program_title}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-white/50 font-semibold mt-1">Week {entry.week_number}, Workout {entry.session_number} &bull; {date}</p>
+                      </div>
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 text-base shadow-sm">
+                        {entry.feedback === 'easy' ? '😌' : entry.feedback === 'perfect' ? '🔥' : '🥵'}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/60 dark:bg-black/20 text-xl shadow-sm">
-                      {entry.feedback === 'easy' ? '😌' : entry.feedback === 'perfect' ? '🔥' : '🥵'}
-                    </div>
+                    {entry.interval_data && entry.interval_data.length > 0 && (
+                      <div className="mt-0.5">
+                        <IntervalPills intervals={entry.interval_data} />
+                      </div>
+                    )}
                   </div>
-                  {entry.interval_data && entry.interval_data.length > 0 && (
-                    <div className="pt-1 border-t border-slate-200 dark:border-white/5">
-                      <IntervalPills intervals={entry.interval_data} />
-                    </div>
-                  )}
-                </GlassCard>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Sign Out */}
-        <GlassCard className="p-2">
-          <button onClick={() => { logout(); showToast('Signed out.'); }} className="flex items-center gap-3 w-full p-4 text-left hover:bg-white/20 rounded-2xl transition-colors text-red-500">
-            <LogOut className="w-5 h-5" />
-            <span className="font-semibold flex-1">Sign Out</span>
-          </button>
-        </GlassCard>
+        <button 
+          onClick={() => { logout(); showToast('Signed out.'); }} 
+          className="flex items-center justify-center gap-2 w-full py-4 text-red-500 dark:text-red-400 hover:bg-red-500/10 rounded-2xl transition-colors border border-red-500/20 dark:border-red-500/10 bg-red-500/5 font-semibold text-sm mt-4 shadow-sm"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Sign Out</span>
+        </button>
       </div>
     );
   };

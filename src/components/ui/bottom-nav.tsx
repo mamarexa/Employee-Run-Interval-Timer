@@ -16,7 +16,7 @@ export function BottomNav({ currentTab, onChange }: BottomNavProps) {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 flex justify-center z-50" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)' }}>
-      <div className="flex justify-around items-center h-16 px-2 w-[90%] max-w-sm bg-white/70 dark:bg-black/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-full shadow-[0_8px_32px_rgba(31,38,135,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+      <div className="flex justify-around items-center h-16 px-2 w-[94%] max-w-md bg-white/70 dark:bg-black/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-full shadow-[0_8px_32px_rgba(31,38,135,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
         {tabs.map((tab) => {
           const isActive = currentTab === tab.id;
           const Icon = tab.icon;
@@ -25,7 +25,7 @@ export function BottomNav({ currentTab, onChange }: BottomNavProps) {
               key={tab.id}
               onClick={() => onChange(tab.id)}
               className={cn(
-                "flex items-center justify-center w-auto px-4 h-12 rounded-full transition-all relative flex-1 gap-2",
+                "flex items-center justify-center w-auto px-2.5 sm:px-4 h-12 rounded-full transition-all relative flex-1 gap-1 sm:gap-2",
                 isActive ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-white/50"
               )}
             >
